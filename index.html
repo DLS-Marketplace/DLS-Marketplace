@@ -90,8 +90,41 @@
 
         <div class="main-col">
           <section class="hero">
-            <h2>Browse the marketplace</h2>
-            <p>Food, assignments, clothes, services and more — from fellow DLS students.</p>
+            <div class="hero-row">
+              <div>
+                <h2>Browse the marketplace</h2>
+                <p>Food, assignments, clothes, services and more — from fellow DLS students.</p>
+              </div>
+              <button id="create-listing-btn" class="btn btn-primary" hidden>+ Create Product</button>
+            </div>
+          </section>
+
+          <section id="admin-panel" class="admin-panel" hidden>
+            <div class="admin-panel-header">
+              <h3>Seller Whitelist</h3>
+              <p>Student IDs below can create product listings.</p>
+            </div>
+            <form id="whitelist-form" class="whitelist-form" autocomplete="off">
+              <input
+                id="whitelist-id"
+                class="whitelist-input"
+                type="text"
+                inputmode="numeric"
+                maxlength="5"
+                placeholder="Student ID"
+                aria-label="Student ID to whitelist"
+              />
+              <button type="submit" class="btn btn-primary">Allow seller</button>
+            </form>
+            <p id="whitelist-msg" class="whitelist-msg" hidden></p>
+            <ul id="whitelist-list" class="whitelist-list"></ul>
+
+            <div class="admin-divider"></div>
+            <div class="admin-panel-header">
+              <h3>Removed products</h3>
+              <p>Deleted listings land here — restore anything removed by mistake.</p>
+            </div>
+            <ul id="trash-list" class="trash-list"></ul>
           </section>
 
           <div id="listing-grid" class="listing-grid"></div>
@@ -101,7 +134,125 @@
       </div>
     </main>
 
+    <div class="dev-bar">
+      <label for="dev-code" class="dev-bar-label">Developer</label>
+      <input
+        id="dev-code"
+        class="dev-bar-input"
+        type="password"
+        placeholder="Enter code"
+        autocomplete="off"
+      />
+      <button id="dev-submit" class="dev-bar-btn">Unlock</button>
+      <span class="dev-hint">(hint: spartan)</span>
+      <span id="dev-status" class="dev-status" hidden></span>
+    </div>
+
     <footer class="footer">made by startup club</footer>
+  </div>
+
+  <!-- Create / edit product modal -->
+  <div id="create-modal" class="modal-overlay" hidden>
+    <div class="modal modal--editor" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+      <div class="modal-header">
+        <h3 id="create-modal-title">Create Product</h3>
+        <button id="create-modal-close" class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="create-form" class="editor-layout" autocomplete="off">
+        <div class="editor-form">
+          <div class="editor-section">
+            <span class="field-label">Photos <span class="field-hint">(select multiple)</span></span>
+            <div id="photo-thumbs" class="photo-thumbs"></div>
+            <div class="photo-actions">
+              <label class="photo-add-btn">
+                + Add photos
+                <input id="create-image-files" type="file" accept="image/*" multiple />
+              </label>
+              <div class="photo-url-row">
+                <input id="create-image-url" type="url" placeholder="…or image URL" />
+                <button type="button" id="add-url-btn" class="btn btn-primary photo-url-btn">Add</button>
+              </div>
+            </div>
+          </div>
+
+          <label class="field">
+            <span class="field-label">Product name</span>
+            <input id="create-title" type="text" maxlength="80" required placeholder="e.g. Homemade cookies" />
+          </label>
+          <label class="field">
+            <span class="field-label">Description</span>
+            <textarea id="create-desc" rows="3" maxlength="300" required placeholder="Short description"></textarea>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Price ($)</span>
+              <input id="create-price" type="number" min="0" max="9999" step="0.01" required placeholder="10" />
+            </label>
+            <label class="field">
+              <span class="field-label">Category</span>
+              <select id="create-category" required>
+                <option value="food">Food</option>
+                <option value="assignments">School Assignments</option>
+                <option value="clothes">Clothes</option>
+                <option value="jobs">Jobs</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+          </div>
+          <label class="field">
+            <span class="field-label">Seller name or brand</span>
+            <input id="create-seller-name" type="text" maxlength="60" required placeholder="Real name or what you go by" />
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Instagram</span>
+              <input id="create-instagram" type="text" maxlength="50" placeholder="@handle" />
+            </label>
+            <label class="field">
+              <span class="field-label">Email</span>
+              <input id="create-email" type="email" maxlength="100" placeholder="you@example.com" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Phone</span>
+              <input id="create-phone" type="tel" maxlength="14" placeholder="123-123-123" />
+            </label>
+            <label class="field">
+              <span class="field-label">Other contact</span>
+              <input id="create-other-social" type="text" maxlength="80" placeholder="Discord, TikTok, etc." />
+            </label>
+          </div>
+          <p id="create-error" class="login-error" hidden></p>
+          <div class="editor-actions">
+            <button type="button" id="create-cancel" class="btn btn-ghost-dark">Cancel</button>
+            <button type="submit" class="btn btn-primary create-submit">Add to marketplace</button>
+          </div>
+        </div>
+
+        <div class="editor-preview">
+          <span class="preview-label">Live preview</span>
+          <div id="live-preview" class="listing-card preview-card" aria-hidden="true"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contact seller modal -->
+  <div id="contact-modal" class="modal-overlay" hidden>
+    <div class="modal modal--contact" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+      <div class="modal-header">
+        <h3 id="contact-modal-title">Contact seller</h3>
+        <button id="contact-modal-close" class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="contact-body">
+        <p id="contact-seller-name" class="contact-seller-name"></p>
+        <p id="contact-primary" class="contact-primary"></p>
+        <div id="contact-apps" class="contact-apps"></div>
+        <div id="contact-plain" class="contact-plain"></div>
+        <p id="contact-none" class="contact-none" hidden>No contact information listed.</p>
+      </div>
+    </div>
   </div>
 
   <!-- Spartan head symbol -->
