@@ -1,0 +1,16 @@
+{
+  "name": "gambit",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "backend": "bun run --filter @gambit/backend dev",
+    "seed": "bun run --filter @gambit/backend seed",
+    "web": "bun run --filter @gambit/web dev",
+    "mobile": "bun run --filter @gambit/mobile start",
+    "ios": "bun run --filter @gambit/mobile ios",
+    "android": "bun run --filter @gambit/mobile android"
+  }
+}

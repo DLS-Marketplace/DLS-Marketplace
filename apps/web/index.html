@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DLS Marketplace</title>
+  <title>Gambit</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -16,21 +16,35 @@
           <use href="#spartan-head"></use>
         </svg>
       </div>
-      <h1 class="login-title">DLS Marketplace</h1>
-      <p class="login-subtitle">Enter your 5-digit student ID</p>
-      <form id="login-form" autocomplete="off" novalidate>
+      <h1 class="login-title">Gambit</h1>
+      <p id="login-subtitle" class="login-subtitle">Sign in with email</p>
+      <form id="email-form" novalidate>
         <input
-          id="student-id"
+          id="login-email"
+          class="login-input login-input--email"
+          type="email"
+          autocomplete="email"
+          placeholder="Email"
+          aria-label="Email"
+        />
+        <button type="submit" class="btn btn-primary login-btn">Continue</button>
+      </form>
+      <form id="code-form" autocomplete="off" novalidate hidden>
+        <input
+          id="login-code"
           class="login-input"
           type="text"
           inputmode="numeric"
-          maxlength="5"
-          placeholder="•••••"
-          aria-label="Student ID"
+          autocomplete="one-time-code"
+          maxlength="6"
+          placeholder="••••••"
+          aria-label="Code"
         />
-        <p id="login-error" class="login-error" hidden>Please enter exactly 5 numbers</p>
-        <button type="submit" class="btn btn-primary login-btn">Enter Marketplace</button>
+        <button type="submit" class="btn btn-primary login-btn">Sign in</button>
+        <button type="button" id="code-back" class="btn btn-ghost-dark login-btn">Back</button>
       </form>
+      <div id="protect-check" class="protect-check" hidden></div>
+      <p id="login-error" class="login-error" hidden></p>
       <p class="login-credit">made by startup club</p>
     </div>
   </div>
@@ -42,7 +56,7 @@
         <svg viewBox="0 0 64 64" class="spartan-icon" aria-hidden="true">
           <use href="#spartan-head"></use>
         </svg>
-        <span class="topbar-brand">DLS Marketplace</span>
+        <span class="topbar-brand">Gambit</span>
       </div>
       <nav class="topbar-tabs" aria-label="Categories">
         <button class="tab-btn active" data-category="all">All</button>
@@ -68,7 +82,6 @@
               <button class="filter-btn active" data-sort="featured">Featured</button>
               <button class="filter-btn" data-sort="cheapest">Cheapest</button>
               <button class="filter-btn" data-sort="expensive">Most Expensive</button>
-              <button class="filter-btn" data-sort="popular">Most Popular</button>
               <button class="filter-btn" data-sort="newest">Newest</button>
               <button class="filter-btn" data-sort="az">Name A–Z</button>
             </div>
@@ -84,7 +97,7 @@
               step="5"
               value="100"
             />
-            <div class="price-range-value">Up to $<span id="price-range-label">100</span></div>
+            <div class="price-range-value">Up to $<span id="price-range-label">100+</span></div>
           </div>
         </aside>
 
@@ -95,36 +108,8 @@
                 <h2>Browse the marketplace</h2>
                 <p>Food, assignments, clothes, services and more — from fellow DLS students.</p>
               </div>
-              <button id="create-listing-btn" class="btn btn-primary" hidden>+ Create Product</button>
+              <button id="create-listing-btn" class="btn btn-primary">+ Create Product</button>
             </div>
-          </section>
-
-          <section id="admin-panel" class="admin-panel" hidden>
-            <div class="admin-panel-header">
-              <h3>Seller Whitelist</h3>
-              <p>Student IDs below can create product listings.</p>
-            </div>
-            <form id="whitelist-form" class="whitelist-form" autocomplete="off">
-              <input
-                id="whitelist-id"
-                class="whitelist-input"
-                type="text"
-                inputmode="numeric"
-                maxlength="5"
-                placeholder="Student ID"
-                aria-label="Student ID to whitelist"
-              />
-              <button type="submit" class="btn btn-primary">Allow seller</button>
-            </form>
-            <p id="whitelist-msg" class="whitelist-msg" hidden></p>
-            <ul id="whitelist-list" class="whitelist-list"></ul>
-
-            <div class="admin-divider"></div>
-            <div class="admin-panel-header">
-              <h3>Removed products</h3>
-              <p>Deleted listings land here — restore anything removed by mistake.</p>
-            </div>
-            <ul id="trash-list" class="trash-list"></ul>
           </section>
 
           <div id="listing-grid" class="listing-grid"></div>
@@ -133,20 +118,6 @@
         </div>
       </div>
     </main>
-
-    <div class="dev-bar">
-      <label for="dev-code" class="dev-bar-label">Developer</label>
-      <input
-        id="dev-code"
-        class="dev-bar-input"
-        type="password"
-        placeholder="Enter code"
-        autocomplete="off"
-      />
-      <button id="dev-submit" class="dev-bar-btn">Unlock</button>
-      <span class="dev-hint">(hint: spartan)</span>
-      <span id="dev-status" class="dev-status" hidden></span>
-    </div>
 
     <footer class="footer">made by startup club</footer>
   </div>
@@ -161,32 +132,28 @@
       <form id="create-form" class="editor-layout" autocomplete="off">
         <div class="editor-form">
           <div class="editor-section">
-            <span class="field-label">Photos <span class="field-hint">(select multiple)</span></span>
+            <span class="field-label">Photos <span class="field-hint">(up to 5)</span></span>
             <div id="photo-thumbs" class="photo-thumbs"></div>
             <div class="photo-actions">
               <label class="photo-add-btn">
                 + Add photos
                 <input id="create-image-files" type="file" accept="image/*" multiple />
               </label>
-              <div class="photo-url-row">
-                <input id="create-image-url" type="url" placeholder="…or image URL" />
-                <button type="button" id="add-url-btn" class="btn btn-primary photo-url-btn">Add</button>
-              </div>
             </div>
           </div>
 
           <label class="field">
             <span class="field-label">Product name</span>
-            <input id="create-title" type="text" maxlength="80" required placeholder="e.g. Homemade cookies" />
+            <input id="create-title" type="text" minlength="3" maxlength="80" required placeholder="e.g. Homemade cookies" />
           </label>
           <label class="field">
             <span class="field-label">Description</span>
-            <textarea id="create-desc" rows="3" maxlength="300" required placeholder="Short description"></textarea>
+            <textarea id="create-desc" rows="3" maxlength="2000" placeholder="Short description"></textarea>
           </label>
           <div class="field-row">
             <label class="field">
               <span class="field-label">Price ($)</span>
-              <input id="create-price" type="number" min="0" max="9999" step="0.01" required placeholder="10" />
+              <input id="create-price" type="number" min="0.01" max="10000" step="0.01" required placeholder="10" />
             </label>
             <label class="field">
               <span class="field-label">Category</span>
@@ -201,28 +168,8 @@
           </div>
           <label class="field">
             <span class="field-label">Seller name or brand</span>
-            <input id="create-seller-name" type="text" maxlength="60" required placeholder="Real name or what you go by" />
+            <input id="create-seller-name" type="text" maxlength="50" required placeholder="Real name or what you go by" />
           </label>
-          <div class="field-row">
-            <label class="field">
-              <span class="field-label">Instagram</span>
-              <input id="create-instagram" type="text" maxlength="50" placeholder="@handle" />
-            </label>
-            <label class="field">
-              <span class="field-label">Email</span>
-              <input id="create-email" type="email" maxlength="100" placeholder="you@example.com" />
-            </label>
-          </div>
-          <div class="field-row">
-            <label class="field">
-              <span class="field-label">Phone</span>
-              <input id="create-phone" type="tel" maxlength="14" placeholder="123-123-123" />
-            </label>
-            <label class="field">
-              <span class="field-label">Other contact</span>
-              <input id="create-other-social" type="text" maxlength="80" placeholder="Discord, TikTok, etc." />
-            </label>
-          </div>
           <p id="create-error" class="login-error" hidden></p>
           <div class="editor-actions">
             <button type="button" id="create-cancel" class="btn btn-ghost-dark">Cancel</button>
@@ -235,23 +182,6 @@
           <div id="live-preview" class="listing-card preview-card" aria-hidden="true"></div>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Contact seller modal -->
-  <div id="contact-modal" class="modal-overlay" hidden>
-    <div class="modal modal--contact" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
-      <div class="modal-header">
-        <h3 id="contact-modal-title">Contact seller</h3>
-        <button id="contact-modal-close" class="modal-close" aria-label="Close">&times;</button>
-      </div>
-      <div class="contact-body">
-        <p id="contact-seller-name" class="contact-seller-name"></p>
-        <p id="contact-primary" class="contact-primary"></p>
-        <div id="contact-apps" class="contact-apps"></div>
-        <div id="contact-plain" class="contact-plain"></div>
-        <p id="contact-none" class="contact-none" hidden>No contact information listed.</p>
-      </div>
     </div>
   </div>
 
@@ -275,6 +205,6 @@
     </symbol>
   </svg>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

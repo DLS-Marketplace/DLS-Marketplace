@@ -1,0 +1,20 @@
+{
+  "name": "@gambit/backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "seed": "convex run seed:demo",
+    "typecheck": "tsc --noEmit -p convex"
+  },
+  "dependencies": {
+    "@gambit/shared": "workspace:*",
+    "convex": "^1.48.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "~6.0.3"
+  }
+}

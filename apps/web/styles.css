@@ -127,6 +127,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   border-color: var(--green-500);
   box-shadow: 0 0 0 4px rgba(67, 160, 71, 0.2);
 }
+.login-input--email {
+  font-size: 1.05rem;
+  letter-spacing: normal;
+}
+#code-back { margin-top: 0.5rem; }
 .login-input.shake {
   animation: shake 0.35s;
   border-color: #c62828;
@@ -1141,3 +1146,4 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   .carousel-arrow { opacity: 1; }
   .listing-grid { grid-template-columns: 1fr; }
 }
+.protect-check { margin-top: 1rem; display: flex; justify-content: center; }
