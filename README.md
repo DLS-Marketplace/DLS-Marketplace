@@ -60,5 +60,9 @@ Posting a listing is two steps: upload each photo to an upload URL to get its `s
 
 ## Deploying
 
-- Backend: `bun run --filter @loop/backend deploy` pushes to production Convex (`standing-perch-700`). Its `CLERK_JWT_ISSUER_DOMAIN` is set; update it when moving to a production Clerk instance.
-- Web: `bun run --filter @loop/web deploy` builds against production Convex (`apps/web/.env.production`) and uploads to Cloudflare Pages project `gambit` → https://gambit-ajg.pages.dev.
+Every push to `main` deploys automatically (`.github/workflows/deploy.yml`):
+
+- Backend → production Convex (`standing-perch-700`)
+- Web → https://gambit-ajg.pages.dev (Cloudflare Pages project `gambit`, built against `apps/web/.env.production`)
+
+Repo secrets: `CONVEX_DEPLOY_KEY`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`. Prod's `CLERK_JWT_ISSUER_DOMAIN` is set; update it when moving to a production Clerk instance.
