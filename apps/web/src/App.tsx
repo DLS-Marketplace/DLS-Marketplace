@@ -29,7 +29,9 @@ import FilterSidebar, { type SidebarFilters } from "./components/FilterSidebar";
 import FilterDrawer from "./components/FilterDrawer";
 import CreateProductModal from "./components/CreateProductModal";
 import ProductCard from "./components/ProductCard";
-import { ChevronLeftIcon, ChevronRightIcon, SpartanIcon } from "./components/Icons";
+import { ChevronLeftIcon, ChevronRightIcon } from "./components/Icons";
+import LoopLogo from "./components/LoopLogo";
+import ThemeToggle from "./components/ThemeToggle";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -164,13 +166,13 @@ function Marketplace({ onSignOut }: { onSignOut: () => void }) {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-4 border-b bg-[var(--surface)] px-6 py-3">
         <div className="flex items-center gap-2">
-          <SpartanIcon className="size-8" />
-          <span className="text-lg font-bold tracking-tight">Loop</span>
+          <LoopLogo variant="mark" className="h-9" />
         </div>
         <div className="flex items-center gap-3">
           <Button size="sm" onPress={createState.open}>
             Create Product
           </Button>
+          <ThemeToggle />
           <span className="whitespace-nowrap text-sm text-[var(--muted)]">
             {me?.name || clerk.user?.primaryEmailAddress?.emailAddress || ""}
           </span>

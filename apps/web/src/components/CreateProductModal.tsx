@@ -167,7 +167,7 @@ export default function CreateProductModal({ state, sellerName, onCreated }: Cre
                     <Label className="text-sm text-[var(--muted)]">Product name</Label>
                     <Input
                       value={title}
-                      onChange={setTitle}
+                      onChange={(e) => setTitle(e.target.value)}
                       placeholder="e.g. Homemade cookies"
                       isRequired
                     />
@@ -177,7 +177,7 @@ export default function CreateProductModal({ state, sellerName, onCreated }: Cre
                     <Label className="text-sm text-[var(--muted)]">Description</Label>
                     <TextArea
                       value={desc}
-                      onChange={setDesc}
+                      onChange={(e) => setDesc(e.target.value)}
                       placeholder="Short description"
                       rows={3}
                     />
@@ -186,7 +186,7 @@ export default function CreateProductModal({ state, sellerName, onCreated }: Cre
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <Label className="text-sm text-[var(--muted)]">Price ($)</Label>
-                      <Input type="number" value={price} onChange={setPrice} placeholder="10" isRequired />
+                      <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="10" isRequired />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <Label className="text-sm text-[var(--muted)]">Category</Label>
@@ -217,7 +217,7 @@ export default function CreateProductModal({ state, sellerName, onCreated }: Cre
                     <Label className="text-sm text-[var(--muted)]">Seller name or brand</Label>
                     <Input
                       value={seller}
-                      onChange={setSeller}
+                      onChange={(e) => setSeller(e.target.value)}
                       placeholder="Real name or what you go by"
                       isRequired
                     />

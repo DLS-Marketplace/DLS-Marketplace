@@ -223,7 +223,7 @@ export default function FilterSidebar({ filters, onChange }: FilterSidebarProps)
               variant="secondary"
               placeholder="$0"
               value={filters.priceFrom}
-              onChange={(v) => onChange({ ...filters, priceFrom: v })}
+              onChange={(e) => onChange({ ...filters, priceFrom: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -232,7 +232,7 @@ export default function FilterSidebar({ filters, onChange }: FilterSidebarProps)
               variant="secondary"
               placeholder="Any"
               value={filters.priceTo}
-              onChange={(v) => onChange({ ...filters, priceTo: v })}
+              onChange={(e) => onChange({ ...filters, priceTo: e.target.value })}
             />
           </div>
         </div>

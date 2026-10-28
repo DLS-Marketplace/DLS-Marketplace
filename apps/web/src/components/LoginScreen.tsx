@@ -10,7 +10,8 @@ import {
   Spinner,
   Typography,
 } from "@heroui/react";
-import { SpartanIcon } from "./Icons";
+import LoopLogo from "./LoopLogo";
+import ThemeToggle from "./ThemeToggle";
 import {
   clerkMessage,
   passProtectCheck,
@@ -71,13 +72,11 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
   };
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[var(--background)] p-6">
+    <div className="relative grid min-h-screen place-items-center bg-[var(--background)] p-6">
+      <ThemeToggle className="absolute top-4 right-4" />
       <Card className="w-full max-w-[400px] p-8">
         <Card.Content className="flex flex-col items-center gap-1">
-          <SpartanIcon className="size-16" />
-          <Typography type="h2" weight="bold">
-            Loop
-          </Typography>
+          <LoopLogo variant="wordmark" className="h-16" />
           <Typography color="muted" className="mb-4 text-sm">
             {step === "email" ? "Sign in with email" : `Code sent to ${sentTo}`}
           </Typography>
@@ -99,7 +98,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 autoComplete="email"
                 placeholder="Email"
                 value={email}
-                onChange={setEmail}
+                onChange={(e) => setEmail(e.target.value)}
                 isDisabled={busy}
               />
               <Button type="submit" fullWidth isPending={busy}>
