@@ -1,0 +1,100 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* Loop theme mapped onto HeroUI design tokens.
+   Surfaces, brand green, amber rating stamp, muted text, radius scale. */
+:root,
+.light,
+[data-theme="light"] {
+  --accent: #1b5e20;
+  --accent-foreground: #ffffff;
+
+  --background: #f6f7f6;
+  --foreground: #1a231c;
+
+  --surface: #ffffff;
+  --surface-foreground: #1a231c;
+
+  --overlay: #ffffff;
+  --overlay-foreground: #1a231c;
+
+  --default: #e4e7e4;
+  --default-foreground: #1a231c;
+
+  --muted: #6b756e;
+
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+
+  --danger: #c62828;
+  --danger-foreground: #ffffff;
+
+  --success: #2e7d32;
+  --success-foreground: #ffffff;
+
+  --field-background: #f6f7f6;
+  --field-foreground: #1a231c;
+  --field-placeholder: #6b756e;
+  --field-border: #ccd1cc;
+  --field-radius: 8px;
+
+  --border: #e4e7e4;
+  --separator: #e4e7e4;
+  --focus: #1b5e20;
+  --link: #1b5e20;
+
+  --radius: 10px;
+}
+
+html,
+body {
+  min-height: 100%;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Rating stars keep the amber stamp from the Loop palette. */
+.star {
+  color: var(--default);
+}
+.star polygon {
+  fill: none;
+}
+.star--on {
+  color: var(--warning);
+}
+.star--on polygon {
+  fill: var(--warning);
+}
+
+/* Selectable region cards (hidden radio over a card). */
+.region-card[data-selected] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.region-card[data-selected] .region-name,
+.region-card[data-selected] .region-price {
+  color: var(--accent);
+}
+
+/* Round color swatches. */
+.swatch-dot {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 1px solid var(--border);
+}
+.swatch-dot--inline {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Condition segmented control. */
+.segmented [role="radio"] {
+  flex: 1;
+  justify-content: center;
+}
