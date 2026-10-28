@@ -4,7 +4,7 @@ Bun workspaces monorepo. Web and mobile share one [Convex](https://convex.dev) b
 
 ```
 apps/
-  web/        Website (static HTML/CSS/JS, served with Vite)
+  web/        Website (Astro + React, HeroUI components, Loop theme)
   mobile/     Expo app (SDK 58, expo-router)
 packages/
   backend/    Convex backend: schema, queries, mutations, file storage
@@ -18,7 +18,7 @@ bun install
 bun run web       # or: bun run mobile
 ```
 
-No env files needed: web and mobile default to the shared dev Convex deployment and Clerk instance. To use your own, set `VITE_CONVEX_URL` / `VITE_CLERK_PUBLISHABLE_KEY` (web) or `EXPO_PUBLIC_CONVEX_URL` / `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` (mobile, see `.env.example`) in a `.env.local`.
+No env files needed: web and mobile default to the shared dev Convex deployment and Clerk instance. To use your own, set `PUBLIC_CONVEX_URL` / `PUBLIC_CLERK_PUBLISHABLE_KEY` (web) or `EXPO_PUBLIC_CONVEX_URL` / `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` (mobile, see `.env.example`) in a `.env.local`.
 
 Changing backend functions needs access to the Convex project: `bun run backend` (log in on first run), then `bun run seed` for demo listings.
 

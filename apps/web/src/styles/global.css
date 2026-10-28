@@ -1,0 +1,162 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* Loop theme mapped onto HeroUI design tokens.
+   Surfaces, brand green, amber rating stamp, muted text, radius scale. */
+:root,
+.light,
+[data-theme="light"] {
+  --accent: #1b5e20;
+  --accent-foreground: #ffffff;
+
+  --background: #f6f7f6;
+  --foreground: #1a231c;
+
+  --surface: #ffffff;
+  --surface-foreground: #1a231c;
+
+  --overlay: #ffffff;
+  --overlay-foreground: #1a231c;
+
+  --default: #e4e7e4;
+  --default-foreground: #1a231c;
+
+  --muted: #6b756e;
+
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+
+  --danger: #c62828;
+  --danger-foreground: #ffffff;
+
+  --success: #2e7d32;
+  --success-foreground: #ffffff;
+
+  --field-background: #f6f7f6;
+  --field-foreground: #1a231c;
+  --field-placeholder: #6b756e;
+  --field-border: #ccd1cc;
+  --field-radius: 8px;
+
+  --border: #e4e7e4;
+  --separator: #e4e7e4;
+  --focus: #1b5e20;
+  --link: #1b5e20;
+
+  --accent-soft: rgba(27, 94, 32, 0.12);
+
+  --radius: 10px;
+}
+
+/* Loop dark theme: deep green-black surfaces, brighter green brand. */
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --accent: #66bb6a;
+  --accent-foreground: #0a1f0d;
+
+  --background: #0e1410;
+  --foreground: #e3ebe4;
+
+  --surface: #161d18;
+  --surface-foreground: #e3ebe4;
+
+  --overlay: #1c241e;
+  --overlay-foreground: #e3ebe4;
+
+  --default: #232c25;
+  --default-foreground: #e3ebe4;
+
+  --muted: #97a39a;
+
+  --warning: #f59e0b;
+  --warning-foreground: #2a1a02;
+
+  --danger: #d32f2f;
+  --danger-foreground: #ffffff;
+
+  --success: #4caf50;
+  --success-foreground: #0a1f0d;
+
+  --field-background: #131a15;
+  --field-foreground: #e3ebe4;
+  --field-placeholder: #97a39a;
+  --field-border: #2c362d;
+  --field-radius: 8px;
+
+  --border: #232c25;
+  --separator: #232c25;
+  --focus: #66bb6a;
+  --link: #7cc98a;
+
+  --accent-soft: rgba(102, 187, 106, 0.16);
+
+  --radius: 10px;
+}
+
+html,
+body {
+  min-height: 100%;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Rating stars keep the amber stamp from the Loop palette. */
+.star {
+  color: var(--default);
+}
+.star polygon {
+  fill: none;
+}
+.star--on {
+  color: var(--warning);
+}
+.star--on polygon {
+  fill: var(--warning);
+}
+
+/* Selectable region cards (hidden radio over a card). */
+.region-card[data-selected] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.region-card[data-selected] .region-name,
+.region-card[data-selected] .region-price {
+  color: var(--accent);
+}
+
+/* Theme-aware logo variants: same shape, navy in light, green in dark. */
+.logo-dark-variant {
+  display: none;
+}
+.dark .logo-light-variant,
+[data-theme="dark"] .logo-light-variant {
+  display: none;
+}
+.dark .logo-dark-variant,
+[data-theme="dark"] .logo-dark-variant {
+  display: block;
+}
+
+/* Round color swatches. */
+.swatch-dot {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 1px solid var(--border);
+}
+.swatch-dot--inline {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Condition segmented control. */
+.segmented [role="radio"] {
+  flex: 1;
+  justify-content: center;
+}

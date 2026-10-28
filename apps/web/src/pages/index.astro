@@ -1,0 +1,33 @@
+---
+import "../styles/global.css";
+import App from "../App";
+---
+
+<!doctype html>
+<html lang="en" class="light" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loop</title>
+    <script is:inline>
+      // Apply the stored (or system) theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var stored = localStorage.getItem("loop-theme");
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.classList.remove("light", "dark");
+          document.documentElement.classList.add(theme);
+          document.documentElement.dataset.theme = theme;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <App client:only="react" />
+  </body>
+</html>

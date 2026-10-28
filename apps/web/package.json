@@ -4,18 +4,29 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "deploy": "vite build && wrangler pages deploy dist --project-name gambit --branch main"
-  },
-  "devDependencies": {
-    "vite": "^8.3.5",
-    "wrangler": "^4.153.0"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "astro build && wrangler pages deploy dist --project-name gambit --branch main"
   },
   "dependencies": {
+    "@astrojs/react": "^4.3.0",
     "@clerk/clerk-js": "^6.41.0",
+    "@heroui/react": "^3.2.6",
+    "@heroui/styles": "^3.2.6",
+    "@internationalized/date": "^3.12.4",
     "@loop/backend": "workspace:*",
-    "convex": "^1.48.0"
+    "astro": "^5.13.0",
+    "convex": "^1.48.0",
+    "react": "^19.1.0",
+    "react-aria": "^3.52.1",
+    "react-aria-components": "^1.21.1",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "typescript": "^5.9.0",
+    "wrangler": "^4.153.0"
   }
 }
