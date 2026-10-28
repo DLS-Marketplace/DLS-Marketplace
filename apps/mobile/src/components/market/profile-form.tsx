@@ -1,10 +1,12 @@
 import { useUser } from '@clerk/expo';
-import { NAME_MAX_LENGTH } from '@gambit/shared';
+import { NAME_MAX_LENGTH } from '@loop/shared';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 import { errorMessage, useCurrentUser, useUpdateProfile, type Photo } from '@/lib/queries';
 
 import { Avatar } from './avatar';
@@ -40,7 +42,16 @@ export function ProfileForm({ submitLabel, onSaved }: { submitLabel: string; onS
   const save = () =>
     updateProfile
       .run({ name: trimmed !== user?.name ? trimmed : undefined, photo: photo ?? undefined })
-      .then(onSaved, (e) => Alert.alert('Couldn’t save', errorMessage(e)));
+      .then(
+        () => {
+          haptics.success();
+          onSaved?.();
+        },
+        (e) => {
+          haptics.error();
+          Alert.alert('Couldn’t save', errorMessage(e));
+        }
+      );
 
   return (
     <View style={styles.form}>

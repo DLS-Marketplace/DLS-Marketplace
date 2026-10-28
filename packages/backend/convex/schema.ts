@@ -1,4 +1,4 @@
-import { CATEGORIES } from '@gambit/shared';
+import { CATEGORIES } from '@loop/shared';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 

@@ -1,11 +1,10 @@
-import { CATEGORY_LABELS } from '@gambit/shared';
+import { CATEGORY_LABELS } from '@loop/shared';
 import { Image } from 'expo-image';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,11 +14,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/market/avatar';
+import { Bux } from '@/components/market/loopbux';
 import { Icon } from '@/components/market/icon';
+import { Pressable } from '@/components/ui/pressable';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics, withHaptic } from '@/lib/haptics';
 import { errorMessage, useCurrentUser, useDeleteProduct, useProduct } from '@/lib/queries';
-import { formatPrice, useMarketplace } from '@/store/marketplace';
+import { useMarketplace } from '@/store/marketplace';
 
 function daysSince(time: number) {
   return Math.floor((Date.now() - time) / 86_400_000);
@@ -52,7 +54,6 @@ export default function ProductScreen() {
   const isMine = product.seller.id === user?.id;
   const boughtByMe = purchases.some((p) => p.product.id === product.id);
   const sold = isSold(product.id);
-  const price = formatPrice(product.priceCents);
   const listedDaysAgo = daysSince(product.createdAt);
 
   return (
@@ -63,20 +64,24 @@ export default function ProductScreen() {
             <Stack.Toolbar.MenuAction
               icon="trash"
               destructive
-              onPress={() =>
+              onPress={withHaptic(() =>
                 Alert.alert('Delete listing?', undefined, [
                   { text: 'Cancel', style: 'cancel' },
                   {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () =>
+                    onPress: withHaptic(() =>
                       deleteProduct.run(product.id).then(
                         () => router.back(),
-                        (e) => Alert.alert('Couldn’t delete', errorMessage(e))
-                      ),
+                        (e) => {
+                          haptics.error();
+                          Alert.alert('Couldn’t delete', errorMessage(e));
+                        }
+                      )
+                    ),
                   },
                 ])
-              }>
+              )}>
               Delete
             </Stack.Toolbar.MenuAction>
           </Stack.Toolbar.Menu>
@@ -87,14 +92,14 @@ export default function ProductScreen() {
       <Stack.Toolbar>
         <Stack.Toolbar.View hidesSharedBackground>
           <View style={styles.barPriceWrap}>
-            <Text style={[styles.barPrice, { color: theme.text }]}>{price}</Text>
+            <Bux amount={product.priceCents} size={20} color={theme.text} />
           </View>
         </Stack.Toolbar.View>
         <Stack.Toolbar.Spacer />
         <Stack.Toolbar.Button
           variant="prominent"
           disabled={isMine || sold}
-          onPress={() => router.push({ pathname: '/checkout/[id]', params: { id: product.id } })}>
+          onPress={withHaptic(() => router.push({ pathname: '/checkout/[id]', params: { id: product.id } }))}>
           {isMine ? 'Your listing' : boughtByMe ? 'Purchased' : sold ? 'Sold' : 'Buy now'}
         </Stack.Toolbar.Button>
       </Stack.Toolbar>
@@ -136,7 +141,7 @@ export default function ProductScreen() {
         <View style={styles.body}>
           <View style={styles.tags}>
             <View style={[styles.tag, { backgroundColor: theme.tintSoft }]}>
-              <Text style={[styles.tagText, { color: theme.tint }]}>
+              <Text style={[styles.tagText, { color: theme.tintText }]}>
                 {CATEGORY_LABELS[product.category]}
               </Text>
             </View>
@@ -245,10 +250,5 @@ const styles = StyleSheet.create({
     minWidth: 80,
     paddingHorizontal: 4,
     justifyContent: 'center',
-  },
-  barPrice: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
   },
 });

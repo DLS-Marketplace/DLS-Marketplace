@@ -5,7 +5,6 @@ import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,12 +12,15 @@ import {
 } from 'react-native';
 
 import { Button } from '@/components/market/button';
+import { Bux } from '@/components/market/loopbux';
 import { Icon } from '@/components/market/icon';
 import { STAGES, StageBadge, StageTrack } from '@/components/market/stage';
+import { Pressable } from '@/components/ui/pressable';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics, withHaptic } from '@/lib/haptics';
 import { useMyProducts, type Product } from '@/lib/queries';
-import { formatMoney, useMarketplace } from '@/store/marketplace';
+import { useMarketplace } from '@/store/marketplace';
 import type { ListingStage } from '@/store/types';
 
 const FILTERS = {
@@ -47,7 +49,7 @@ export default function SellScreen() {
         <Stack.Toolbar.Button
           icon="plus"
           accessibilityLabel="List an item"
-          onPress={() => router.push('/new-listing')}
+          onPress={withHaptic(() => router.push('/new-listing'))}
         />
       </Stack.Toolbar>
 
@@ -64,7 +66,10 @@ export default function SellScreen() {
             <Host matchContents={{ vertical: true }} style={styles.segment}>
               <Picker
                 selection={filter}
-                onSelectionChange={(key: FilterKey) => setFilter(key)}
+                onSelectionChange={(key: FilterKey) => {
+                  haptics.select();
+                  setFilter(key);
+                }}
                 modifiers={[pickerStyle('segmented')]}>
                 {(Object.keys(FILTERS) as FilterKey[]).map((key) => (
                   <SwiftText key={key} modifiers={[tag(key)]}>
@@ -94,7 +99,7 @@ function HowItWorks() {
         {STAGES.map((stage, i) => (
           <View key={stage.key} style={styles.cycleStep}>
             <View style={[styles.cycleIcon, { backgroundColor: theme.tintSoft }]}>
-              <Icon name={stage.icon} size={17} color={theme.tint} />
+              <Icon name={stage.icon} size={17} color={theme.tintText} />
             </View>
             <Text style={[styles.cycleLabel, { color: theme.text }]}>{stage.label}</Text>
             {i < STAGES.length - 1 && (
@@ -126,10 +131,10 @@ function ListingRow({ product }: { product: Product }) {
           <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.text }]}>
             {product.title}
           </Text>
-          <Text style={[styles.rowMeta, { color: theme.textSecondary }]}>
-            {formatMoney(product.priceCents)}
-            {sale ? ` · ${sale.buyer}` : ''}
-          </Text>
+          <View style={styles.metaRow}>
+            <Bux amount={product.priceCents} size={13} color={theme.textSecondary} style={styles.rowMeta} />
+            {sale && <Text style={[styles.rowMeta, { color: theme.textSecondary }]}>· {sale.buyer}</Text>}
+          </View>
           <StageBadge stage={stage} />
         </View>
       </Pressable>
@@ -161,9 +166,7 @@ function ListingRow({ product }: { product: Product }) {
           />
         )}
         {stage === 'released' && sale && (
-          <Text style={[styles.earned, { color: theme.tint }]}>
-            +{formatMoney(sale.amountCents - sale.feeCents)}
-          </Text>
+          <Bux amount={sale.amount - sale.fee} sign="+" color={theme.tintText} style={styles.earned} />
         )}
       </View>
     </View>
@@ -234,8 +237,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   rowMeta: {
     fontSize: 13,
+    fontWeight: '500',
   },
   actionRow: {
     flexDirection: 'row',

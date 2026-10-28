@@ -1,12 +1,15 @@
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/market/button';
+import { Bux, LoopbuxIcon } from '@/components/market/loopbux';
 import { Icon } from '@/components/market/icon';
 import { PayoutGlyph } from '@/components/market/payout-glyph';
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
-import { formatMoney, PAYOUT_METHODS, useMarketplace } from '@/store/marketplace';
+import { haptics, withHaptic } from '@/lib/haptics';
+import { buxToUsdCents, formatUsd, PAYOUT_METHODS, useMarketplace } from '@/store/marketplace';
 import type { PayoutMethod } from '@/store/types';
 
 function validHandle(method: PayoutMethod, handle: string) {
@@ -30,15 +33,17 @@ export default function PayoutScreen() {
   const { balances, dispatch } = useMarketplace();
   const [method, setMethod] = useState<PayoutMethod>('cashapp');
   const [handle, setHandle] = useState('');
-  const [amount, setAmount] = useState((balances.availableCents / 100).toFixed(2));
+  const [amount, setAmount] = useState(String(balances.available));
 
-  const amountCents = Math.round(parseFloat(amount || '0') * 100);
-  const amountOk = amountCents > 0 && amountCents <= balances.availableCents;
+  const bux = parseInt(amount || '0', 10);
+  const usdCents = buxToUsdCents(bux);
+  const amountOk = usdCents > 0 && bux <= balances.available;
   const handleOk = validHandle(method, handle);
   const info = PAYOUT_METHODS[method];
 
   const submit = () => {
-    dispatch({ type: 'requestPayout', method, handle: handle.trim(), amountCents });
+    dispatch({ type: 'requestPayout', method, handle: handle.trim(), amount: bux });
+    haptics.success();
     router.back();
   };
 
@@ -51,25 +56,29 @@ export default function PayoutScreen() {
       automaticallyAdjustKeyboardInsets
       contentContainerStyle={styles.content}>
       <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Close" onPress={() => router.back()} />
+        <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Close" onPress={withHaptic(() => router.back())} />
       </Stack.Toolbar>
 
       <View style={styles.amountBlock}>
-          <View style={styles.amountRow}>
-          <Text style={[styles.dollar, { color: theme.text }]}>$</Text>
+        <View style={styles.amountRow}>
+          <LoopbuxIcon size={40} />
           <TextInput
             value={amount}
-            onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ''))}
-            keyboardType="decimal-pad"
+            onChangeText={(t) => setAmount(t.replace(/\D/g, ''))}
+            keyboardType="number-pad"
             style={[styles.amountInput, { color: theme.text }]}
             selectTextOnFocus
           />
         </View>
-        <Pressable onPress={() => setAmount((balances.availableCents / 100).toFixed(2))}>
-          <Text style={[styles.available, { color: amountOk ? theme.textSecondary : theme.warning }]}>
-            {formatMoney(balances.availableCents)} ·{' '}
-            <Text style={{ color: theme.tint, fontWeight: '700' }}>Max</Text>
-          </Text>
+        <Pressable onPress={() => setAmount(String(balances.available))} style={styles.availableRow}>
+          <Bux
+            amount={balances.available}
+            size={14}
+            color={amountOk ? theme.textSecondary : theme.warning}
+            style={styles.available}
+          />
+          <Text style={[styles.available, { color: theme.textSecondary }]}>·</Text>
+          <Text style={[styles.available, { color: theme.tintText, fontWeight: '700' }]}>Max</Text>
         </Pressable>
       </View>
 
@@ -94,7 +103,7 @@ export default function PayoutScreen() {
               <Text style={[styles.methodText, { color: theme.text }]}>{PAYOUT_METHODS[m].label}</Text>
               {active && (
                 <View style={styles.check}>
-                  <Icon name="checkmark.circle.fill" size={18} color={theme.tint} />
+                  <Icon name="checkmark.circle.fill" size={18} color={theme.tintText} />
                 </View>
               )}
             </Pressable>
@@ -116,7 +125,7 @@ export default function PayoutScreen() {
       />
 
       <Button
-        title={amountOk ? `Send ${formatMoney(amountCents)}` : 'Send'}
+        title={amountOk ? `Send ${formatUsd(usdCents)}` : 'Send'}
         disabled={!amountOk || !handleOk}
         onPress={submit}
         style={styles.submit}
@@ -138,10 +147,12 @@ const styles = StyleSheet.create({
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  dollar: {
-    fontSize: 40,
-    fontWeight: '700',
+  availableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   amountInput: {
     fontSize: 52,
@@ -152,6 +163,7 @@ const styles = StyleSheet.create({
   },
   available: {
     fontSize: 14,
+    fontWeight: '500',
   },
   methodGrid: {
     flexDirection: 'row',

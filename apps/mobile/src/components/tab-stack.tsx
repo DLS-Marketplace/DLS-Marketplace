@@ -11,7 +11,7 @@ export function TabStack({ title, largeTitle = true }: { title: string; largeTit
         headerLargeTitleEnabled: largeTitle,
         headerTransparent: !largeTitle || undefined,
         headerShadowVisible: false,
-        headerTintColor: theme.tint,
+        headerTintColor: theme.tintText,
         headerLargeTitleStyle: { color: theme.text },
         headerTitleStyle: { color: theme.text },
         headerBackButtonDisplayMode: 'minimal',

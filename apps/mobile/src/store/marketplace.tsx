@@ -1,8 +1,9 @@
-// Local, in-memory demo of the money flow (purchases, the selling cycle, payouts).
+// Local, in-memory demo of the money flow (Loopbux top-ups, purchases, the selling cycle, cash-outs).
 // Listings themselves come from Convex; billing isn't wired to a backend yet.
+import { LOOPBUX_PER_USD } from '@loop/shared';
 import { createContext, use, useReducer, type PropsWithChildren } from 'react';
 
-import type { ListingStage, Payout, PayoutMethod, ProductSnapshot, Purchase, Sale } from './types';
+import type { ListingStage, Payout, PayoutMethod, ProductSnapshot, Purchase, Sale, TopUp } from './types';
 
 export const PLATFORM_FEE_RATE = 0.05;
 
@@ -16,33 +17,41 @@ export const PAYOUT_METHODS: Record<
   zelle: { label: 'Zelle', color: '#6D1ED4', glyph: 'Z', placeholder: 'Email or phone' },
 };
 
-export function formatMoney(cents: number) {
+/** Loopbux packs, in Loopbux. */
+export const LOOPBUX_PACKS = [500, 1_000, 2_500, 5_000];
+
+export function formatBux(amount: number) {
+  return amount.toLocaleString('en-US');
+}
+
+export function formatUsd(cents: number) {
   return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-/** Like formatMoney, but drops ".00" for whole-dollar prices. */
-export function formatPrice(cents: number) {
-  return formatMoney(cents).replace(/\.00$/, '');
+export function buxToUsdCents(amount: number) {
+  return Math.round((amount * 100) / LOOPBUX_PER_USD);
 }
 
-export function feeFor(amountCents: number) {
-  return Math.round(amountCents * PLATFORM_FEE_RATE);
+export function feeFor(amount: number) {
+  return Math.round(amount * PLATFORM_FEE_RATE);
 }
 
 type State = {
+  topUps: TopUp[];
   sales: Sale[];
   purchases: Purchase[];
   payouts: Payout[];
 };
 
-const initialState: State = { sales: [], purchases: [], payouts: [] };
+const initialState: State = { topUps: [], sales: [], purchases: [], payouts: [] };
 
 type Action =
+  | { type: 'topUp'; amount: number }
   | { type: 'buy'; product: ProductSnapshot }
   | { type: 'simulateSale'; product: ProductSnapshot }
   | { type: 'markDelivered'; saleId: string }
   | { type: 'confirmReceipt'; saleId: string }
-  | { type: 'requestPayout'; method: PayoutMethod; handle: string; amountCents: number };
+  | { type: 'requestPayout'; method: PayoutMethod; handle: string; amount: number };
 
 let idCounter = 0;
 const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${idCounter++}`;
@@ -55,15 +64,31 @@ function snapshot({ id, title, priceCents }: ProductSnapshot): ProductSnapshot {
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
+    case 'topUp': {
+      if (action.amount <= 0) return state;
+      return {
+        ...state,
+        topUps: [
+          {
+            id: newId('topup'),
+            amount: action.amount,
+            usdCents: buxToUsdCents(action.amount),
+            createdAt: Date.now(),
+          },
+          ...state.topUps,
+        ],
+      };
+    }
     case 'buy': {
       if (isSold(state, action.product.id)) return state;
+      if (action.product.priceCents > balancesOf(state).available) return state;
       return {
         ...state,
         purchases: [
           {
             id: newId('order'),
             product: snapshot(action.product),
-            amountCents: action.product.priceCents,
+            amount: action.product.priceCents,
             createdAt: Date.now(),
           },
           ...state.purchases,
@@ -72,7 +97,7 @@ function reducer(state: State, action: Action): State {
     }
     case 'simulateSale': {
       if (isSold(state, action.product.id)) return state;
-      const amountCents = action.product.priceCents;
+      const amount = action.product.priceCents;
       return {
         ...state,
         sales: [
@@ -80,8 +105,8 @@ function reducer(state: State, action: Action): State {
             id: newId('sale'),
             product: snapshot(action.product),
             buyer: DEMO_BUYERS[state.sales.length % DEMO_BUYERS.length],
-            amountCents,
-            feeCents: feeFor(amountCents),
+            amount,
+            fee: feeFor(amount),
             stage: 'paid',
             createdAt: Date.now(),
           },
@@ -104,7 +129,7 @@ function reducer(state: State, action: Action): State {
         ),
       };
     case 'requestPayout': {
-      if (action.amountCents <= 0 || action.amountCents > balancesOf(state).availableCents) return state;
+      if (action.amount <= 0 || action.amount > balancesOf(state).available) return state;
       return {
         ...state,
         payouts: [
@@ -112,7 +137,8 @@ function reducer(state: State, action: Action): State {
             id: newId('payout'),
             method: action.method,
             handle: action.handle,
-            amountCents: action.amountCents,
+            amount: action.amount,
+            usdCents: buxToUsdCents(action.amount),
             status: 'requested',
             createdAt: Date.now(),
           },
@@ -130,15 +156,18 @@ function isSold(state: State, productId: string) {
   );
 }
 
+const sum = (items: { amount: number }[]) => items.reduce((total, i) => total + i.amount, 0);
+
+/** Wallet totals, in Loopbux. */
 function balancesOf(state: State) {
-  const net = (s: Sale) => s.amountCents - s.feeCents;
-  const releasedCents = state.sales.filter((s) => s.stage === 'released').reduce((sum, s) => sum + net(s), 0);
-  const pendingCents = state.sales.filter((s) => s.stage !== 'released').reduce((sum, s) => sum + net(s), 0);
-  const paidOutCents = state.payouts.reduce((sum, p) => sum + p.amountCents, 0);
+  const net = (sales: Sale[]) => sales.reduce((total, s) => total + s.amount - s.fee, 0);
+  const released = net(state.sales.filter((s) => s.stage === 'released'));
+  const pending = net(state.sales.filter((s) => s.stage !== 'released'));
+  const paidOut = sum(state.payouts);
   return {
-    availableCents: releasedCents - paidOutCents,
-    pendingCents,
-    paidOutCents,
+    available: sum(state.topUps) + released - sum(state.purchases) - paidOut,
+    pending,
+    paidOut,
   };
 }
 

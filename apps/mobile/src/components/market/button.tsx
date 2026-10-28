@@ -1,6 +1,8 @@
 import type { SymbolViewProps } from 'expo-symbols';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon } from './icon';
@@ -16,6 +18,8 @@ type ButtonProps = {
   /** Overrides the label/icon color, e.g. for destructive plain buttons. */
   textColor?: string;
   style?: StyleProp<ViewStyle>;
+  /** Shown after the label, e.g. a Loopbux amount. */
+  children?: ReactNode;
 };
 
 export function Button({
@@ -28,6 +32,7 @@ export function Button({
   loading,
   textColor,
   style,
+  children,
 }: ButtonProps) {
   const theme = useTheme();
   const background = {
@@ -35,7 +40,7 @@ export function Button({
     secondary: theme.tintSoft,
     plain: 'transparent',
   }[variant];
-  const foreground = textColor ?? (variant === 'primary' ? theme.onTint : theme.tint);
+  const foreground = textColor ?? (variant === 'primary' ? theme.onTint : theme.tintText);
 
   return (
     <Pressable
@@ -56,6 +61,7 @@ export function Button({
           <Text style={[styles.label, size === 'small' && styles.labelSmall, { color: foreground }]}>
             {title}
           </Text>
+          {children}
         </View>
       )}
     </Pressable>

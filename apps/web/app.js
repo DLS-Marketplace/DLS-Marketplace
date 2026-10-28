@@ -1,5 +1,5 @@
 import { Clerk } from "@clerk/clerk-js";
-import { api } from "@gambit/backend/convex/_generated/api";
+import { api } from "@loop/backend/convex/_generated/api";
 import { ConvexClient } from "convex/browser";
 import { ConvexError } from "convex/values";
 
@@ -27,8 +27,13 @@ let previewIdx = 0;
 let pendingAuth = null; // in-progress Clerk sign-in or sign-up
 let subscriptions = [];
 
-const clerk = new Clerk(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-const convex = new ConvexClient(import.meta.env.VITE_CONVEX_URL);
+// Default to the shared dev Clerk instance and Convex deployment; .env files override.
+const clerk = new Clerk(
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_bW9yYWwtYm94ZXItODM4NC5jbGVyay5hY2NvdW50cy5kZXYk",
+);
+const convex = new ConvexClient(
+  import.meta.env.VITE_CONVEX_URL || "https://blissful-mandrill-162.convex.cloud",
+);
 
 function convexMessage(err) {
   return err instanceof ConvexError ? String(err.data) : err?.message || "Something went wrong";

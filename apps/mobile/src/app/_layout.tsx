@@ -13,11 +13,10 @@ import { convex } from '@/lib/convex';
 import { useMe } from '@/lib/queries';
 import { MarketplaceProvider } from '@/store/marketplace';
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
-
-if (!publishableKey) {
-  throw new Error('Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in apps/mobile/.env.local');
-}
+// Defaults to the shared dev Clerk instance; override with EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY.
+const publishableKey =
+  process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  'pk_test_bW9yYWwtYm94ZXItODM4NC5jbGVyay5hY2NvdW50cy5kZXYk';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,7 +26,7 @@ export default function RootLayout() {
   const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
   const theme = {
     ...base,
-    colors: { ...base.colors, primary: colors.tint, background: colors.background },
+    colors: { ...base.colors, primary: colors.tintText, background: colors.background },
   };
 
   return (
@@ -62,7 +61,7 @@ function RootStack() {
   return (
     <Stack
       screenOptions={{
-        headerTintColor: colors.tint,
+        headerTintColor: colors.tintText,
         headerTitleStyle: { color: colors.text },
         headerBackButtonDisplayMode: 'minimal',
       }}>
@@ -79,8 +78,18 @@ function RootStack() {
             contentStyle: { backgroundColor: colors.background },
           }}
         />
+        <Stack.Screen
+          name="get-loopbux"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: 'fitToContents',
+            sheetGrabberVisible: true,
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        />
         <Stack.Screen name="new-listing" options={{ presentation: 'modal', title: 'New listing' }} />
-        <Stack.Screen name="payout" options={{ presentation: 'modal', title: 'Request payout' }} />
+        <Stack.Screen name="payout" options={{ presentation: 'modal', title: 'Cash out' }} />
         <Stack.Screen name="edit-profile" options={{ presentation: 'modal', title: 'Edit profile' }} />
         <Stack.Screen name="seller/[id]" options={{ title: '' }} />
       </Stack.Protected>

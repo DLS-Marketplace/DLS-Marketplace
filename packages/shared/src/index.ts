@@ -19,5 +19,10 @@ export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic
 export const TITLE_MIN_LENGTH = 3;
 export const TITLE_MAX_LENGTH = 80;
 export const DESCRIPTION_MAX_LENGTH = 2000;
+/** Listing prices are whole Loopbux; the field keeps its old `priceCents` name. */
 export const MAX_PRICE_CENTS = 1_000_000;
+
+/** Loopbux, the in-app currency: bought with USD, spent on listings, cashed out to USD. */
+export const LOOPBUX_PER_USD = 100;
+
 export const NAME_MAX_LENGTH = 50;

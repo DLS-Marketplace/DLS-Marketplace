@@ -1,11 +1,13 @@
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
 import { useCurrentUser, type Product } from '@/lib/queries';
-import { formatPrice } from '@/store/marketplace';
+
+import { Bux } from './loopbux';
 
 const glass = isLiquidGlassAvailable();
 
@@ -22,7 +24,7 @@ export function ProductCard({ product, width }: { product: Product; width: numbe
           <View style={StyleSheet.flatten([styles.imageWrap, { backgroundColor: theme.backgroundSelected }])}>
             <Image source={product.images[0]} style={styles.image} contentFit="cover" transition={200} />
             <GlassView style={[styles.pricePill, !glass && styles.pricePillFallback]}>
-              <Text style={[styles.priceText, { color: theme.text }]}>{formatPrice(product.priceCents)}</Text>
+              <Bux amount={product.priceCents} size={14} color={theme.text} />
             </GlassView>
             {isMine && (
               <View style={[styles.minePill, { backgroundColor: theme.tint }]}>
@@ -59,11 +61,6 @@ const styles = StyleSheet.create({
   },
   pricePillFallback: {
     backgroundColor: 'rgba(255,255,255,0.94)',
-  },
-  priceText: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
   },
   minePill: {
     position: 'absolute',

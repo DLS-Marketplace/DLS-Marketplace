@@ -5,7 +5,7 @@ import {
   PRODUCT_SORTS,
   TITLE_MAX_LENGTH,
   TITLE_MIN_LENGTH,
-} from '@gambit/shared';
+} from '@loop/shared';
 import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 

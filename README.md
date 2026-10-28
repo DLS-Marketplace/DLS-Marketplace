@@ -1,4 +1,4 @@
-# Gambit
+# Loop
 
 Bun workspaces monorepo. Web and mobile share one [Convex](https://convex.dev) backend, so listings and profiles sync live across every device.
 
@@ -15,15 +15,12 @@ packages/
 
 ```sh
 bun install
-bun run backend   # first run: log in to Convex and create the project; keeps syncing convex/ after that
-bunx convex env set CLERK_JWT_ISSUER_DOMAIN https://moral-boxer-8384.clerk.accounts.dev   # from packages/backend
-bun run seed      # optional: demo listings
+bun run web       # or: bun run mobile
 ```
 
-Copy `CONVEX_URL` from `packages/backend/.env.local` into:
+No env files needed: web and mobile default to the shared dev Convex deployment and Clerk instance. To use your own, set `VITE_CONVEX_URL` / `VITE_CLERK_PUBLISHABLE_KEY` (web) or `EXPO_PUBLIC_CONVEX_URL` / `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` (mobile, see `.env.example`) in a `.env.local`.
 
-- `apps/mobile/.env.local` as `EXPO_PUBLIC_CONVEX_URL` (plus `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, see `.env.example`)
-- `apps/web/.env.local` as `VITE_CONVEX_URL`
+Changing backend functions needs access to the Convex project: `bun run backend` (log in on first run), then `bun run seed` for demo listings.
 
 ## Run
 
@@ -63,5 +60,5 @@ Posting a listing is two steps: upload each photo to an upload URL to get its `s
 
 ## Deploying
 
-- Backend: `bun run --filter @gambit/backend deploy` pushes to production Convex (`standing-perch-700`). Its `CLERK_JWT_ISSUER_DOMAIN` is set; update it when moving to a production Clerk instance.
-- Web: `bun run --filter @gambit/web deploy` builds against production Convex (`apps/web/.env.production`) and uploads to Cloudflare Pages project `gambit` → https://gambit-ajg.pages.dev.
+- Backend: `bun run --filter @loop/backend deploy` pushes to production Convex (`standing-perch-700`). Its `CLERK_JWT_ISSUER_DOMAIN` is set; update it when moving to a production Clerk instance.
+- Web: `bun run --filter @loop/web deploy` builds against production Convex (`apps/web/.env.production`) and uploads to Cloudflare Pages project `gambit` → https://gambit-ajg.pages.dev.

@@ -1,12 +1,14 @@
-import { CATEGORIES, CATEGORY_LABELS, type Category, type ProductSort } from '@gambit/shared';
+import { CATEGORIES, CATEGORY_LABELS, type Category, type ProductSort } from '@loop/shared';
 import type { SymbolViewProps } from 'expo-symbols';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { Icon } from '@/components/market/icon';
 import { ProductGrid } from '@/components/market/product-grid';
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 import { useProducts } from '@/lib/queries';
 
 const CATEGORY_ICONS: Record<Category | 'all', SymbolViewProps['name']> = {
@@ -39,7 +41,10 @@ export default function ShopScreen() {
               key={s.key}
               icon={s.icon}
               isOn={s.key === sort}
-              onPress={() => setSort(s.key)}>
+              onPress={() => {
+                haptics.select();
+                setSort(s.key);
+              }}>
               {s.label}
             </Stack.Toolbar.MenuAction>
           ))}

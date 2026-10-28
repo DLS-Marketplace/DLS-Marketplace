@@ -1,4 +1,4 @@
-import { IMAGE_TYPES, MAX_IMAGE_BYTES } from '@gambit/shared';
+import { IMAGE_TYPES, MAX_IMAGE_BYTES } from '@loop/shared';
 import { ConvexError } from 'convex/values';
 
 import type { Doc, Id } from './_generated/dataModel';

@@ -1,9 +1,11 @@
 import { useClerk, useUser } from '@clerk/expo';
 import { router, Stack } from 'expo-router';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, StyleSheet, Text } from 'react-native';
 
 import { ProfileView } from '@/components/market/profile-view';
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
+import { withHaptic } from '@/lib/haptics';
 import { useCurrentUser, useMyProducts } from '@/lib/queries';
 
 export default function ProfileScreen() {
@@ -20,14 +22,14 @@ export default function ProfileScreen() {
       {
         text: 'Sign out',
         style: 'destructive',
-        onPress: () => signOut(),
+        onPress: withHaptic(() => signOut()),
       },
     ]);
 
   return (
     <>
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button onPress={() => router.push('/edit-profile')}>Edit</Stack.Toolbar.Button>
+        <Stack.Toolbar.Button onPress={withHaptic(() => router.push('/edit-profile'))}>Edit</Stack.Toolbar.Button>
       </Stack.Toolbar>
 
       <ProfileView

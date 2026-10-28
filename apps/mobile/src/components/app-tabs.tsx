@@ -1,6 +1,7 @@
 import { NativeTabs } from 'expo-router/native-tabs';
 
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 import { useMarketplace } from '@/store/marketplace';
 
 export default function AppTabs() {
@@ -9,7 +10,10 @@ export default function AppTabs() {
   const needsAction = sales.filter((s) => s.stage === 'paid').length;
 
   return (
-    <NativeTabs tintColor={theme.tint} minimizeBehavior="onScrollDown">
+    <NativeTabs
+      tintColor={theme.tintText}
+      minimizeBehavior="onScrollDown"
+      screenListeners={{ tabPress: haptics.select }}>
       <NativeTabs.Trigger name="(shop)">
         <NativeTabs.Trigger.Label>Shop</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'bag', selected: 'bag.fill' }} md="storefront" />

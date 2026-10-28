@@ -10,7 +10,7 @@ export const STAGES: { key: ListingStage; label: string; icon: SymbolViewProps['
   { key: 'listed', label: 'Listed', icon: 'tag.fill' },
   { key: 'paid', label: 'Sold', icon: 'lock.fill' },
   { key: 'delivered', label: 'Delivered', icon: 'shippingbox.fill' },
-  { key: 'released', label: 'Paid', icon: 'dollarsign.circle.fill' },
+  { key: 'released', label: 'Paid', icon: 'g.circle.fill' },
 ];
 
 export function stageIndex(stage: ListingStage) {

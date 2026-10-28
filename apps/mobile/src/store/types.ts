@@ -1,11 +1,11 @@
 /**
  * Selling cycle for one of your listings:
- * listed → paid (buyer paid Gambit, funds held) → delivered → released (funds added to your balance)
+ * listed → paid (buyer paid Loop, funds held) → delivered → released (funds added to your balance)
  */
 export type SaleStage = 'paid' | 'delivered' | 'released';
 export type ListingStage = 'listed' | SaleStage;
 
-/** The bits of a listing that sales and purchases keep a copy of. */
+/** The bits of a listing that sales and purchases keep a copy of. Amounts are in Loopbux. */
 export type ProductSnapshot = {
   id: string;
   title: string;
@@ -16,8 +16,8 @@ export type Sale = {
   id: string;
   product: ProductSnapshot;
   buyer: string;
-  amountCents: number;
-  feeCents: number;
+  amount: number;
+  fee: number;
   stage: SaleStage;
   createdAt: number;
 };
@@ -25,7 +25,7 @@ export type Sale = {
 export type Purchase = {
   id: string;
   product: ProductSnapshot;
-  amountCents: number;
+  amount: number;
   createdAt: number;
 };
 
@@ -35,7 +35,16 @@ export type Payout = {
   id: string;
   method: PayoutMethod;
   handle: string;
-  amountCents: number;
+  amount: number;
+  usdCents: number;
   status: 'requested' | 'sent';
+  createdAt: number;
+};
+
+/** Loopbux bought with USD. */
+export type TopUp = {
+  id: string;
+  amount: number;
+  usdCents: number;
   createdAt: number;
 };

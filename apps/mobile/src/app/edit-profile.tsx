@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { ProfileForm } from '@/components/market/profile-form';
 import { useTheme } from '@/hooks/use-theme';
+import { withHaptic } from '@/lib/haptics';
 
 export default function EditProfileScreen() {
   const theme = useTheme();
@@ -14,7 +15,7 @@ export default function EditProfileScreen() {
       automaticallyAdjustKeyboardInsets
       contentContainerStyle={styles.content}>
       <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Close" onPress={() => router.back()} />
+        <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Close" onPress={withHaptic(() => router.back())} />
       </Stack.Toolbar>
       <ProfileForm submitLabel="Save" onSaved={() => router.back()} />
     </ScrollView>

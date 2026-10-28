@@ -1,16 +1,18 @@
-import { CATEGORIES, CATEGORY_LABELS, MAX_IMAGES_PER_PRODUCT, type Category } from '@gambit/shared';
+import { CATEGORIES, CATEGORY_LABELS, MAX_IMAGES_PER_PRODUCT, type Category } from '@loop/shared';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/market/button';
+import { Bux, LoopbuxIcon } from '@/components/market/loopbux';
 import { Icon } from '@/components/market/icon';
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics, withHaptic } from '@/lib/haptics';
 import { errorMessage, useCreateProduct, type Photo } from '@/lib/queries';
-import { feeFor, formatMoney } from '@/store/marketplace';
-
+import { feeFor } from '@/store/marketplace';
 
 export default function NewListingScreen() {
   const theme = useTheme();
@@ -21,7 +23,8 @@ export default function NewListingScreen() {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState<Category>('other');
 
-  const priceCents = Math.round(parseFloat(price || '0') * 100);
+  // Whole Loopbux; stored in the listing's `priceCents` field.
+  const priceCents = parseInt(price || '0', 10);
   const canSubmit = images.length > 0 && title.trim().length > 2 && priceCents > 0;
 
   const pickImages = async () => {
@@ -49,8 +52,14 @@ export default function NewListingScreen() {
         photos: images,
       })
       .then(
-        () => router.back(),
-        (e) => Alert.alert('Couldn’t publish', errorMessage(e))
+        () => {
+          haptics.success();
+          router.back();
+        },
+        (e) => {
+          haptics.error();
+          Alert.alert('Couldn’t publish', errorMessage(e));
+        }
       );
   };
 
@@ -65,15 +74,15 @@ export default function NewListingScreen() {
       automaticallyAdjustKeyboardInsets
       contentContainerStyle={styles.content}>
       <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Close" onPress={() => router.back()} />
+        <Stack.Toolbar.Button icon="xmark" accessibilityLabel="Close" onPress={withHaptic(() => router.back())} />
       </Stack.Toolbar>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photos}>
         <Pressable
           onPress={pickImages}
           style={[styles.addPhoto, { borderColor: theme.tint, backgroundColor: theme.tintSoft }]}>
-          <Icon name="camera.fill" size={22} color={theme.tint} />
-          <Text style={[styles.addPhotoText, { color: theme.tint }]}>
+          <Icon name="camera.fill" size={22} color={theme.tintText} />
+          <Text style={[styles.addPhotoText, { color: theme.tintText }]}>
             {images.length ? `${images.length}/${MAX_IMAGES_PER_PRODUCT}` : 'Photos'}
           </Text>
         </Pressable>
@@ -95,18 +104,22 @@ export default function NewListingScreen() {
         style={inputStyle}
       />
 
-      <TextInput
-        value={price}
-        onChangeText={(t) => setPrice(t.replace(/[^\d.]/g, ''))}
-        placeholder="Price"
-        placeholderTextColor={theme.textSecondary}
-        keyboardType="decimal-pad"
-        style={inputStyle}
-      />
+      <View style={[styles.input, styles.priceRow, { backgroundColor: theme.backgroundElement }]}>
+        <LoopbuxIcon size={20} />
+        <TextInput
+          value={price}
+          onChangeText={(t) => setPrice(t.replace(/\D/g, ''))}
+          placeholder="Price"
+          placeholderTextColor={theme.textSecondary}
+          keyboardType="number-pad"
+          style={[styles.priceInput, { color: theme.text }]}
+        />
+      </View>
       {priceCents > 0 && (
-        <Text style={[styles.hint, { color: theme.textSecondary }]}>
-          You get {formatMoney(priceCents - feeFor(priceCents))}
-        </Text>
+        <View style={styles.hintRow}>
+          <Text style={[styles.hint, { color: theme.textSecondary }]}>You get</Text>
+          <Bux amount={priceCents - feeFor(priceCents)} size={13} color={theme.textSecondary} />
+        </View>
       )}
 
       <View style={styles.chips}>
@@ -190,6 +203,22 @@ const styles = StyleSheet.create({
     minHeight: 110,
     paddingTop: 14,
     textAlignVertical: 'top',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  priceInput: {
+    flex: 1,
+    alignSelf: 'stretch',
+    fontSize: 17,
+    letterSpacing: 0,
+  },
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   hint: {
     fontSize: 13,

@@ -4,26 +4,30 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/market/button';
+import { Bux } from '@/components/market/loopbux';
 import { Icon } from '@/components/market/icon';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 import { useProduct } from '@/lib/queries';
-import { formatMoney, useMarketplace } from '@/store/marketplace';
+import { useMarketplace } from '@/store/marketplace';
 
 export default function CheckoutSheet() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
-  const { dispatch } = useMarketplace();
+  const { balances, dispatch } = useMarketplace();
   const product = useProduct(id);
   const [status, setStatus] = useState<'review' | 'paying' | 'done'>('review');
 
   if (!product) return null;
+  const short = status === 'review' && balances.available < product.priceCents;
 
   const pay = () => {
     setStatus('paying');
-    // Stand-in for a real payment call; funds land in the Gambit account.
+    // Stand-in for a real payment call; the Loopbux are held by Loop.
     setTimeout(() => {
       dispatch({ type: 'buy', product });
       setStatus('done');
+      haptics.success();
     }, 900);
   };
 
@@ -31,11 +35,11 @@ export default function CheckoutSheet() {
     return (
       <View style={[styles.container, styles.center, { backgroundColor: theme.background }]}>
         <View style={[styles.successIcon, { backgroundColor: theme.tintSoft }]}>
-          <Icon name="checkmark" size={30} color={theme.tint} weight="bold" />
+          <Icon name="checkmark" size={30} color={theme.tintText} weight="bold" />
         </View>
         <Text style={[styles.heading, { color: theme.text }]}>Payment received</Text>
         <Text style={[styles.successBody, { color: theme.textSecondary }]}>
-          Held by Gambit until you get your item.
+          Held by Loop until you get your item.
         </Text>
         <Button title="Done" style={styles.fullWidth} onPress={() => router.dismissTo('/')} />
       </View>
@@ -57,18 +61,19 @@ export default function CheckoutSheet() {
       </View>
 
       <View style={styles.notice}>
-        <Icon name="lock.shield.fill" size={15} color={theme.tint} />
-        <Text style={[styles.noticeText, { color: theme.textSecondary }]}>
-          Held by Gambit until you get it
+        <Text style={[styles.noticeText, { color: short ? theme.warning : theme.textSecondary }]}>
+          Balance
         </Text>
+        <Bux amount={balances.available} size={13} color={short ? theme.warning : theme.textSecondary} />
       </View>
 
-      <Button
-        title={`Pay ${formatMoney(product.priceCents)}`}
-        icon="lock.fill"
-        loading={status === 'paying'}
-        onPress={pay}
-      />
+      {short ? (
+        <Button title="Get Loopbux" icon="plus" onPress={() => router.push('/get-loopbux')} />
+      ) : (
+        <Button title="Pay" icon="lock.fill" loading={status === 'paying'} onPress={pay}>
+          <Bux amount={product.priceCents} size={17} color={theme.onTint} />
+        </Button>
+      )}
     </View>
   );
 }

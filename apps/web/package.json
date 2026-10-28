@@ -1,5 +1,5 @@
 {
-  "name": "@gambit/web",
+  "name": "@loop/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@clerk/clerk-js": "^6.41.0",
-    "@gambit/backend": "workspace:*",
+    "@loop/backend": "workspace:*",
     "convex": "^1.48.0"
   }
 }

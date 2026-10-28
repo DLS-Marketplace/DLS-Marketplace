@@ -1,6 +1,6 @@
-import { api } from '@gambit/backend/convex/_generated/api';
-import type { Id } from '@gambit/backend/convex/_generated/dataModel';
-import type { Category, ProductSort } from '@gambit/shared';
+import { api } from '@loop/backend/convex/_generated/api';
+import type { Id } from '@loop/backend/convex/_generated/dataModel';
+import type { Category, ProductSort } from '@loop/shared';
 import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import { ConvexError } from 'convex/values';

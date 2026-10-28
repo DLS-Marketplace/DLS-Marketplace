@@ -3,11 +3,12 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/market/button';
+import { Bux, LoopbuxIcon } from '@/components/market/loopbux';
 import { Icon } from '@/components/market/icon';
 import { PayoutGlyph } from '@/components/market/payout-glyph';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatMoney, PAYOUT_METHODS, useMarketplace } from '@/store/marketplace';
+import { buxToUsdCents, formatUsd, PAYOUT_METHODS, useMarketplace } from '@/store/marketplace';
 import type { PayoutMethod } from '@/store/types';
 
 type Activity = {
@@ -15,7 +16,8 @@ type Activity = {
   createdAt: number;
   title: string;
   subtitle: string;
-  amount: string;
+  amount: number;
+  sign: '+' | '-';
   tone: 'positive' | 'neutral' | 'pending';
   icon?: SymbolViewProps['name'];
   method?: PayoutMethod;
@@ -32,15 +34,25 @@ function timeAgo(ts: number) {
 
 export default function BillingScreen() {
   const theme = useTheme();
-  const { balances, sales, purchases, payouts } = useMarketplace();
+  const { balances, topUps, sales, purchases, payouts } = useMarketplace();
 
   const activity: Activity[] = [
+    ...topUps.map<Activity>((t) => ({
+      id: t.id,
+      createdAt: t.createdAt,
+      title: 'Loopbux',
+      subtitle: formatUsd(t.usdCents),
+      amount: t.amount,
+      sign: '+',
+      tone: 'positive',
+    })),
     ...sales.map<Activity>((s) => ({
       id: s.id,
       createdAt: s.createdAt,
       title: s.product.title,
       subtitle: s.stage === 'released' ? 'Sold' : 'Sold · pending',
-      amount: `+${formatMoney(s.amountCents - s.feeCents)}`,
+      amount: s.amount - s.fee,
+      sign: '+',
       tone: s.stage === 'released' ? 'positive' : 'pending',
       icon: 'tag.fill',
     })),
@@ -49,7 +61,8 @@ export default function BillingScreen() {
       createdAt: p.createdAt,
       title: p.product.title,
       subtitle: 'Bought',
-      amount: `-${formatMoney(p.amountCents)}`,
+      amount: p.amount,
+      sign: '-',
       tone: 'neutral',
       icon: 'bag.fill',
     })),
@@ -57,14 +70,15 @@ export default function BillingScreen() {
       id: p.id,
       createdAt: p.createdAt,
       title: PAYOUT_METHODS[p.method].label,
-      subtitle: `${p.handle} · ${p.status === 'sent' ? 'Sent' : 'Processing'}`,
-      amount: `-${formatMoney(p.amountCents)}`,
+      subtitle: `${formatUsd(p.usdCents)} · ${p.status === 'sent' ? 'Sent' : 'Processing'}`,
+      amount: p.amount,
+      sign: '-',
       tone: p.status === 'sent' ? 'neutral' : 'pending',
       method: p.method,
     })),
   ].sort((a, b) => b.createdAt - a.createdAt);
 
-  const toneColor = { positive: theme.tint, neutral: theme.text, pending: theme.warning };
+  const toneColor = { positive: theme.tintText, neutral: theme.text, pending: theme.warning };
 
   return (
     <ScrollView
@@ -73,31 +87,37 @@ export default function BillingScreen() {
       contentContainerStyle={styles.content}>
       <View style={[styles.balanceCard, { backgroundColor: theme.tint }]}>
         <Text style={[styles.balanceLabel, { color: theme.onTint }]}>Available</Text>
-        <Text style={[styles.balance, { color: theme.onTint }]}>
-          {formatMoney(balances.availableCents)}
+        <Bux amount={balances.available} size={44} color={theme.onTint} style={styles.balance} />
+        <Text style={[styles.subLabel, { color: theme.onTint }]}>
+          ≈ {formatUsd(buxToUsdCents(balances.available))}
         </Text>
         <View style={styles.balanceRow}>
           <View>
             <Text style={[styles.subLabel, { color: theme.onTint }]}>Pending</Text>
-            <Text style={[styles.subValue, { color: theme.onTint }]}>
-              {formatMoney(balances.pendingCents)}
-            </Text>
+            <Bux amount={balances.pending} size={16} color={theme.onTint} />
           </View>
           <View>
-            <Text style={[styles.subLabel, { color: theme.onTint }]}>Paid out</Text>
-            <Text style={[styles.subValue, { color: theme.onTint }]}>
-              {formatMoney(balances.paidOutCents)}
-            </Text>
+            <Text style={[styles.subLabel, { color: theme.onTint }]}>Cashed out</Text>
+            <Bux amount={balances.paidOut} size={16} color={theme.onTint} />
           </View>
         </View>
-        <Button
-          title="Cash out"
-          icon="arrow.up.right"
-          textColor={theme.onTint}
-          disabled={balances.availableCents <= 0}
-          onPress={() => router.push('/payout')}
-          style={styles.payoutButton}
-        />
+        <View style={styles.actions}>
+          <Button
+            title="Add"
+            icon="plus"
+            textColor={theme.onTint}
+            onPress={() => router.push('/get-loopbux')}
+            style={[styles.payoutButton, styles.action]}
+          />
+          <Button
+            title="Cash out"
+            icon="arrow.up.right"
+            textColor={theme.onTint}
+            disabled={balances.available <= 0}
+            onPress={() => router.push('/payout')}
+            style={[styles.payoutButton, styles.action]}
+          />
+        </View>
       </View>
 
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Activity</Text>
@@ -120,6 +140,8 @@ export default function BillingScreen() {
             ]}>
             {a.method ? (
               <PayoutGlyph method={a.method} />
+            ) : !a.icon ? (
+              <LoopbuxIcon size={36} />
             ) : (
               <View style={[styles.activityIcon, { backgroundColor: theme.backgroundSelected }]}>
                 <Icon name={a.icon!} size={15} color={theme.text} />
@@ -134,7 +156,7 @@ export default function BillingScreen() {
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[styles.activityAmount, { color: toneColor[a.tone] }]}>{a.amount}</Text>
+              <Bux amount={a.amount} sign={a.sign} color={toneColor[a.tone]} />
               <Text style={[styles.activitySub, { color: theme.textSecondary }]}>
                 {timeAgo(a.createdAt)}
               </Text>
@@ -167,10 +189,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   balance: {
-    fontSize: 44,
-    fontWeight: '700',
     letterSpacing: -1,
-    fontVariant: ['tabular-nums'],
   },
   balanceRow: {
     flexDirection: 'row',
@@ -183,13 +202,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     opacity: 0.75,
   },
-  subValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  action: {
+    flex: 1,
   },
   payoutButton: {
-    marginTop: 4,
     backgroundColor: 'rgba(255,255,255,0.22)',
   },
   card: {
@@ -235,10 +256,5 @@ const styles = StyleSheet.create({
   activitySub: {
     fontSize: 12,
     marginTop: 1,
-  },
-  activityAmount: {
-    fontSize: 15,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
   },
 });

@@ -1,10 +1,11 @@
 import { isClerkAPIResponseError, useSignIn, useSignUp } from '@clerk/expo';
 import { useRef, useState, type ComponentRef } from 'react';
-import { KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/market/button';
 import { Icon } from '@/components/market/icon';
+import { Pressable } from '@/components/ui/pressable';
 import { useTheme } from '@/hooks/use-theme';
 
 const CODE_LENGTH = 6;
@@ -85,7 +86,7 @@ export default function SignInScreen() {
             <Icon name={step === 'email' ? 'bag.fill' : 'envelope.fill'} size={30} color={theme.onTint} />
           </View>
           <Text style={[styles.title, { color: theme.text }]}>
-            {step === 'email' ? 'Gambit' : 'Check your email'}
+            {step === 'email' ? 'Loop' : 'Check your email'}
           </Text>
           {step === 'code' && (
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{trimmedEmail}</Text>
@@ -149,7 +150,7 @@ export default function SignInScreen() {
                     setError(null);
                     setResent(false);
                   }}>
-                  <Text style={[styles.link, { color: theme.tint }]}>Change email</Text>
+                  <Text style={[styles.link, { color: theme.tintText }]}>Change email</Text>
                 </Pressable>
                 <Pressable
                   hitSlop={12}
@@ -158,7 +159,7 @@ export default function SignInScreen() {
                     await sendCode();
                     setResent(true);
                   }}>
-                  <Text style={[styles.link, { color: resent ? theme.textSecondary : theme.tint }]}>
+                  <Text style={[styles.link, { color: resent ? theme.textSecondary : theme.tintText }]}>
                     {resent ? 'Sent' : 'Resend code'}
                   </Text>
                 </Pressable>

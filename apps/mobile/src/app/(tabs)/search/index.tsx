@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { ProductGrid } from '@/components/market/product-grid';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { withHaptic } from '@/lib/haptics';
 import { useProducts } from '@/lib/queries';
 
 export default function SearchScreen() {
@@ -16,7 +17,7 @@ export default function SearchScreen() {
         placement="automatic"
         placeholder="Search"
         onChangeText={(e) => setQuery(e.nativeEvent.text)}
-        onCancelButtonPress={() => setQuery('')}
+        onCancelButtonPress={withHaptic(() => setQuery(''))}
       />
       <ProductGrid products={products} />
     </>

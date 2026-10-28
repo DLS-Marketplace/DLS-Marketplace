@@ -1,4 +1,4 @@
-import { NAME_MAX_LENGTH } from '@gambit/shared';
+import { NAME_MAX_LENGTH } from '@loop/shared';
 import { ConvexError, v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
