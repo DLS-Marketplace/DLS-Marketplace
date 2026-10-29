@@ -9,33 +9,45 @@ export const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export type SortKey = "featured" | "cheapest" | "expensive" | "newest" | "az";
+/** Every product uses the same size list — no per-category "portion/length/size" variants. */
+export const SIZES = ["S", "M", "L", "XL"] as const;
 
-export const SORT_OPTIONS: { id: SortKey; label: string }[] = [
+export interface ColorOption {
+  name: string;
+  hex: string;
+}
+
+export const COLOR_PALETTE: ColorOption[] = [
+  { name: "Black", hex: "#17251a" },
+  { name: "White", hex: "#f2f1ed" },
+  { name: "Navy", hex: "#0d1f33" },
+  { name: "Green", hex: "#16a34a" },
+  { name: "Silver", hex: "#b9c2bd" },
+  { name: "Sand", hex: "#d9c9a8" },
+];
+
+export type SortKey =
+  | "featured"
+  | "most_products"
+  | "cheapest"
+  | "expensive"
+  | "newest"
+  | "az";
+
+export const BUSINESS_SORT_OPTIONS: { id: SortKey; label: string }[] = [
+  { id: "featured", label: "Featured" },
+  { id: "most_products", label: "Most products" },
+  { id: "newest", label: "Newest" },
+  { id: "az", label: "Name A–Z" },
+];
+
+export const PRODUCT_SORT_OPTIONS: { id: SortKey; label: string }[] = [
   { id: "featured", label: "Featured" },
   { id: "cheapest", label: "Price: Low to High" },
   { id: "expensive", label: "Price: High to Low" },
   { id: "newest", label: "Newest" },
   { id: "az", label: "Name A–Z" },
 ];
-
-export const PRICE_RANGE_DEFS: Record<string, [number, number]> = {
-  "under-10": [0, 1000],
-  "10-20": [1000, 2000],
-  "20-50": [2000, 5000],
-  "50-100": [5000, 10000],
-  "over-100": [10000, Infinity],
-};
-
-export const VARIANT_OPTIONS: Record<string, { label: string; options: string[] }> = {
-  food: { label: "Portion", options: ["Small", "Regular", "Large"] },
-  assignments: { label: "Length", options: ["1 page", "3 pages", "5 pages"] },
-  clothes: { label: "Size", options: ["S", "M", "L", "XL"] },
-  jobs: { label: "Duration", options: ["30 min", "1 hour", "2 hours"] },
-  other: { label: "Option", options: ["Standard", "Custom"] },
-};
-
-export const COLOR_OPTIONS = ["Black", "White", "Green", "Silver"];
 
 export interface Listing {
   id: string;
@@ -48,24 +60,19 @@ export interface Listing {
   seller: { id: string; name: string };
 }
 
-export interface Filters {
-  categories: Set<string>;
-  priceRanges: Set<string>;
-  priceFromCents: number | null;
-  priceToCents: number | null;
-  brand: string;
-  sort: SortKey;
+/** A seller, treated as the business whose products fill its store page. */
+export interface Business {
+  id: string;
+  name: string;
+  listings: Listing[];
+  categories: string[];
+  minPriceCents: number;
+  coverImages: string[];
+  createdAt: number;
 }
 
 export function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(cents % 100 ? 2 : 0)}`;
-}
-
-export function parsePrice(text: string): number | null {
-  const raw = String(text).replace(/[^0-9.]/g, "");
-  if (raw === "") return null;
-  const n = Number(raw);
-  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
 }
 
 export function deliveryWindow(index: number): string {
@@ -77,23 +84,56 @@ export function deliveryWindow(index: number): string {
   return `${fmt(start)} - ${fmt(end)}`;
 }
 
-export function filterListings(listings: Listing[], f: Filters): Listing[] {
-  let items = listings;
-  if (f.categories.size > 0) {
-    items = items.filter((l) => f.categories.has(l.category));
+/** Groups listings by seller into businesses, keeping the seller's most recent order. */
+export function groupBusinesses(listings: Listing[]): Business[] {
+  const bySeller = new Map<string, Business>();
+  for (const listing of listings) {
+    const key = listing.seller.id;
+    let business = bySeller.get(key);
+    if (!business) {
+      business = {
+        id: key,
+        name: listing.seller.name,
+        listings: [],
+        categories: [],
+        minPriceCents: Infinity,
+        coverImages: [],
+        createdAt: listing.createdAt,
+      };
+      bySeller.set(key, business);
+    }
+    business.listings.push(listing);
+    business.minPriceCents = Math.min(business.minPriceCents, listing.priceCents);
+    business.createdAt = Math.max(business.createdAt, listing.createdAt);
+    if (!business.categories.includes(listing.category)) business.categories.push(listing.category);
+    for (const image of listing.images) {
+      if (business.coverImages.length < 3 && !business.coverImages.includes(image)) {
+        business.coverImages.push(image);
+      }
+    }
   }
-  if (f.priceRanges.size > 0) {
-    items = items.filter((l) =>
-      [...f.priceRanges].some((key) => {
-        const [min, max] = PRICE_RANGE_DEFS[key] || [0, Infinity];
-        return l.priceCents >= min && l.priceCents < max;
-      }),
-    );
+  for (const business of bySeller.values()) {
+    if (!Number.isFinite(business.minPriceCents)) business.minPriceCents = 0;
   }
-  if (f.priceFromCents != null) items = items.filter((l) => l.priceCents >= f.priceFromCents);
-  if (f.priceToCents != null) items = items.filter((l) => l.priceCents <= f.priceToCents);
-  if (f.brand) items = items.filter((l) => l.seller.name === f.brand);
-  return sortListings(items, f.sort);
+  return [...bySeller.values()];
+}
+
+export function sortBusinesses(items: Business[], sort: SortKey): Business[] {
+  const sorted = [...items];
+  switch (sort) {
+    case "most_products":
+      sorted.sort((a, b) => b.listings.length - a.listings.length);
+      break;
+    case "newest":
+      sorted.sort((a, b) => b.createdAt - a.createdAt);
+      break;
+    case "az":
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    default:
+      break; // featured = server order
+  }
+  return sorted;
 }
 
 export function sortListings(items: Listing[], sort: SortKey): Listing[] {
@@ -112,9 +152,21 @@ export function sortListings(items: Listing[], sort: SortKey): Listing[] {
       sorted.sort((a, b) => a.title.localeCompare(b.title));
       break;
     default:
-      break; // featured = server order (newest first)
+      break;
   }
   return sorted;
+}
+
+/** Stable color options for a product, so every visit shows the same choices. */
+export function productColors(listing: Listing): ColorOption[] {
+  const count = 3;
+  const hash = [...listing.id].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const picks: ColorOption[] = [];
+  for (let i = 0; picks.length < count; i++) {
+    const color = COLOR_PALETTE[(hash + i * 5) % COLOR_PALETTE.length];
+    if (!picks.some((p) => p.name === color.name)) picks.push(color);
+  }
+  return picks;
 }
 
 /** Page numbers with ellipses: 1 … 4 5 6 … 20 */

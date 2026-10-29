@@ -1,11 +1,10 @@
-import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useConvexAuth, useQuery, ConvexProviderWithAuth } from "convex/react";
 import {
   Alert,
   Breadcrumbs,
   Button,
   Dropdown,
-  Label,
   ListBox,
   Pagination,
   Spinner,
@@ -14,21 +13,25 @@ import {
 } from "@heroui/react";
 import { api, clerk, convex, useClerkAuth } from "./lib/convex";
 import {
+  BUSINESS_SORT_OPTIONS,
   LISTINGS_LIMIT,
   PAGE_SIZE,
-  SORT_OPTIONS,
-  filterListings,
+  PRODUCT_SORT_OPTIONS,
   formatPrice,
-  parsePrice,
+  groupBusinesses,
   pageItems,
+  sortBusinesses,
+  sortListings,
   type Listing,
   type SortKey,
 } from "./lib/listings";
 import LoginScreen from "./components/LoginScreen";
-import FilterSidebar, { type SidebarFilters } from "./components/FilterSidebar";
 import FilterDrawer from "./components/FilterDrawer";
 import CreateProductModal from "./components/CreateProductModal";
 import ProductCard from "./components/ProductCard";
+import ProductDetail from "./components/ProductDetail";
+import BusinessCard from "./components/BusinessCard";
+import WelcomeHero from "./components/WelcomeHero";
 import { ChevronLeftIcon, ChevronRightIcon } from "./components/Icons";
 import LoopLogo from "./components/LoopLogo";
 import ThemeToggle from "./components/ThemeToggle";
@@ -93,6 +96,11 @@ export default function App() {
   );
 }
 
+type View =
+  | { kind: "home" }
+  | { kind: "business"; businessId: string }
+  | { kind: "product"; productId: string; businessId: string };
+
 function Marketplace({ onSignOut }: { onSignOut: () => void }) {
   const { isAuthenticated } = useConvexAuth();
   const me = useQuery(api.users.me, isAuthenticated ? {} : "skip");
@@ -102,42 +110,22 @@ function Marketplace({ onSignOut }: { onSignOut: () => void }) {
   );
   const listings: Listing[] = (result?.page as Listing[]) ?? [];
 
-  const [filters, setFilters] = useState<SidebarFilters>({
-    categories: new Set(["food", "assignments", "clothes"]),
-    priceRanges: new Set(),
-    priceFrom: "",
-    priceTo: "",
-  });
-  const [brand, setBrand] = useState("");
+  const [view, setView] = useState<View>({ kind: "home" });
   const [sort, setSort] = useState<SortKey>("featured");
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const drawerState = useOverlayState({ defaultOpen: false });
+  const filterState = useOverlayState({ defaultOpen: false });
   const createState = useOverlayState({ defaultOpen: false });
+  const businessesSection = useRef<HTMLElement>(null);
 
-  const items = useMemo(
-    () =>
-      filterListings(listings, {
-        categories: filters.categories,
-        priceRanges: filters.priceRanges,
-        priceFromCents: parsePrice(filters.priceFrom),
-        priceToCents: parsePrice(filters.priceTo),
-        brand,
-        sort,
-      }),
-    [listings, filters, brand, sort],
-  );
+  const businesses = useMemo(() => groupBusinesses(listings), [listings]);
 
-  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageSlice = items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const heading =
-    filters.categories.size === 1
-      ? ({ food: "Food", assignments: "Assignments", clothes: "Clothes", jobs: "Jobs", other: "Other" }[
-          [...filters.categories][0]
-        ] ?? "All Products")
-      : "All Products";
+  const navigate = (next: View) => {
+    setView(next);
+    setSort("featured");
+    setPage(1);
+    window.scrollTo({ top: 0 });
+  };
 
   const toggleFavorite = (id: string) =>
     setFavorites((prev) => {
@@ -162,12 +150,253 @@ function Marketplace({ onSignOut }: { onSignOut: () => void }) {
     onSignOut();
   };
 
+  const exploreBusinesses = () =>
+    businessesSection.current?.scrollIntoView({ behavior: "smooth" });
+
+  const sortMenu = (options: typeof BUSINESS_SORT_OPTIONS) => (
+    <Dropdown>
+      <Button variant="outline" size="sm">
+        Sort
+      </Button>
+      <Dropdown.Popover>
+        <Dropdown.Menu
+          selectionMode="single"
+          selectedKeys={new Set([sort])}
+          onAction={(key) => setSort(key as SortKey)}
+        >
+          {options.map((o) => (
+            <Dropdown.Item key={o.id} id={o.id} textValue={o.label}>
+              {o.label}
+              <Dropdown.ItemIndicator />
+            </Dropdown.Item>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
+  );
+
+  const pagination = (total: number) => {
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (totalPages <= 1) return null;
+    return (
+      <nav className="mt-10 flex justify-center" aria-label="Pagination">
+        <Pagination>
+          <Pagination.Content>
+            <Pagination.Item>
+              <Pagination.Previous isDisabled={page === 1} onPress={() => setPage(page - 1)}>
+                <ChevronLeftIcon />
+                Previous
+              </Pagination.Previous>
+            </Pagination.Item>
+            {pageItems(page, totalPages).map((p, i) =>
+              p === "…" ? (
+                <Pagination.Item key={`e${i}`}>
+                  <Pagination.Ellipsis />
+                </Pagination.Item>
+              ) : (
+                <Pagination.Item key={p}>
+                  <Pagination.Link isActive={p === page} onPress={() => setPage(p)}>
+                    {p}
+                  </Pagination.Link>
+                </Pagination.Item>
+              ),
+            )}
+            <Pagination.Item>
+              <Pagination.Next isDisabled={page === totalPages} onPress={() => setPage(page + 1)}>
+                Next
+                <ChevronRightIcon />
+              </Pagination.Next>
+            </Pagination.Item>
+          </Pagination.Content>
+        </Pagination>
+      </nav>
+    );
+  };
+
+  /** Saleor-style page head: breadcrumb, huge title, one-line intro, then the filter bar. */
+  const pageHead = (
+    crumbs: { label: string; onClick?: () => void }[],
+    title: string,
+    intro: string,
+    count: number,
+    countNoun: "business" | "product" = "product",
+  ) => (
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <Breadcrumbs>
+          {crumbs.map((crumb, i) => (
+            <Breadcrumbs.Item key={crumb.label} {...(crumb.onClick ? { href: "#" } : {})}>
+              {crumb.onClick ? (
+                <button
+                  type="button"
+                  onClick={crumb.onClick}
+                  className="hover:underline"
+                >
+                  {crumb.label}
+                </button>
+              ) : (
+                crumb.label
+              )}
+            </Breadcrumbs.Item>
+          ))}
+        </Breadcrumbs>
+        <Typography type="h1" weight="bold" className="text-4xl md:text-5xl">
+          {title}
+        </Typography>
+        <Typography color="muted" className="text-base md:text-lg">
+          {intro}
+        </Typography>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <Button variant="outline" size="sm" onPress={filterState.open}>
+          Filters
+        </Button>
+        <div className="flex items-center gap-4">
+          <Typography color="muted" className="text-sm">
+            {count} {count === 1 ? countNoun : countNoun === "business" ? "businesses" : "products"}
+          </Typography>
+          {sortMenu(view.kind === "home" ? BUSINESS_SORT_OPTIONS : PRODUCT_SORT_OPTIONS)}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderHome = () => {
+    const items = sortBusinesses(businesses, sort);
+    const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    const current = Math.min(page, totalPages);
+    const slice = items.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+    return (
+      <>
+        <WelcomeHero image={businesses[0]?.coverImages[0]} onExplore={exploreBusinesses} />
+        <section ref={businessesSection} className="mx-auto w-full max-w-[1280px] px-6 py-16">
+          {pageHead(
+            [{ label: "Home" }, { label: "Businesses" }],
+            "Businesses",
+            "Shop directly from student-run businesses on Loop.",
+            businesses.length,
+            "business",
+          )}
+          {result === undefined ? (
+            <div className="flex justify-center py-16">
+              <Spinner size="lg" />
+            </div>
+          ) : items.length === 0 ? (
+            <Alert status="default" className="mt-8 rounded-[var(--radius)] border border-dashed">
+              <Alert.Content>
+                <Alert.Description>No businesses are open yet.</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          ) : (
+            <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              {slice.map((business) => (
+                <BusinessCard
+                  key={business.id}
+                  business={business}
+                  onOpen={(businessId) => navigate({ kind: "business", businessId })}
+                />
+              ))}
+            </div>
+          )}
+          {pagination(items.length)}
+        </section>
+      </>
+    );
+  };
+
+  const renderBusiness = (businessId: string) => {
+    const business = businesses.find((b) => b.id === businessId);
+    if (!business) return renderHome();
+    const items = sortListings(business.listings, sort);
+    const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    const current = Math.min(page, totalPages);
+    const slice = items.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+    return (
+      <section className="mx-auto w-full max-w-[1280px] px-6 py-12">
+        {pageHead(
+          [
+            { label: "Home", onClick: () => navigate({ kind: "home" }) },
+            { label: "Businesses", onClick: () => navigate({ kind: "home" }) },
+            { label: business.name },
+          ],
+          business.name,
+          `${business.listings.length} ${business.listings.length === 1 ? "product" : "products"} · from ${formatPrice(business.minPriceCents)}`,
+          business.listings.length,
+        )}
+        {items.length === 0 ? (
+          <Alert status="default" className="mt-8 rounded-[var(--radius)] border border-dashed">
+            <Alert.Content>
+              <Alert.Description>This business hasn't listed anything yet.</Alert.Description>
+            </Alert.Content>
+          </Alert>
+        ) : (
+          <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {slice.map((listing, i) => (
+              <ProductCard
+                key={listing.id}
+                listing={listing}
+                index={(current - 1) * PAGE_SIZE + i}
+                isFavorite={favorites.has(listing.id)}
+                isOwner={!!me && listing.seller.id === me.id}
+                onOpen={(productId) =>
+                  navigate({ kind: "product", productId, businessId })
+                }
+                onToggleFavorite={toggleFavorite}
+                onDelete={deleteListing}
+              />
+            ))}
+          </div>
+        )}
+        {pagination(items.length)}
+      </section>
+    );
+  };
+
+  const renderProduct = (productId: string, businessId: string) => {
+    const business = businesses.find((b) => b.id === businessId);
+    const listing = business?.listings.find((l) => l.id === productId);
+    if (!business || !listing) return renderHome();
+    const index = business.listings.findIndex((l) => l.id === productId);
+    return (
+      <section className="mx-auto w-full max-w-[1280px] px-6 py-12">
+        <Breadcrumbs className="mb-8">
+          <Breadcrumbs.Item href="#">
+            <button type="button" className="hover:underline" onClick={() => navigate({ kind: "home" })}>
+              Home
+            </button>
+          </Breadcrumbs.Item>
+          <Breadcrumbs.Item href="#">
+            <button
+              type="button"
+              className="hover:underline"
+              onClick={() => navigate({ kind: "business", businessId })}
+            >
+              {business.name}
+            </button>
+          </Breadcrumbs.Item>
+          <Breadcrumbs.Item>{listing.title}</Breadcrumbs.Item>
+        </Breadcrumbs>
+        <ProductDetail
+          listing={listing}
+          index={index}
+          onBack={() => navigate({ kind: "business", businessId })}
+        />
+      </section>
+    );
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-4 border-b bg-[var(--surface)] px-6 py-3">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="flex items-center gap-2"
+          onClick={() => navigate({ kind: "home" })}
+          aria-label="Loop home"
+        >
           <LoopLogo variant="mark" className="h-9" />
-        </div>
+        </button>
         <div className="flex items-center gap-3">
           <Button size="sm" onPress={createState.open}>
             Create Product
@@ -182,130 +411,25 @@ function Marketplace({ onSignOut }: { onSignOut: () => void }) {
         </div>
       </header>
 
-      <main className="w-full flex-1 bg-[var(--background)] py-8 md:py-12">
-        <div className="mx-auto w-full max-w-[1280px] px-4 2xl:px-0">
-          {/* Toolbar */}
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <Breadcrumbs className="mb-1">
-                <Breadcrumbs.Item href="#">Home</Breadcrumbs.Item>
-                <Breadcrumbs.Item href="#">Products</Breadcrumbs.Item>
-                <Breadcrumbs.Item>{heading}</Breadcrumbs.Item>
-              </Breadcrumbs>
-              <Typography type="h2" weight="semibold" className="text-xl md:text-2xl">
-                {heading}
-              </Typography>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="lg:hidden" onPress={drawerState.open}>
-                Filters
-              </Button>
-              <Dropdown>
-                <Button variant="outline" size="sm">
-                  Sort
-                </Button>
-                <Dropdown.Popover>
-                  <Dropdown.Menu
-                    selectionMode="single"
-                    selectedKeys={new Set([sort])}
-                    onAction={(key) => setSort(key as SortKey)}
-                  >
-                    {SORT_OPTIONS.map((o) => (
-                      <Dropdown.Item key={o.id} id={o.id} textValue={o.label}>
-                        {o.label}
-                        <Dropdown.ItemIndicator />
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown>
-            </div>
+      <main className="w-full flex-1 bg-[var(--background)]">
+        {result === undefined ? (
+          <div className="flex justify-center py-32">
+            <Spinner size="lg" />
           </div>
-
-          {/* Two-pane layout */}
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            <aside className="hidden w-[320px] shrink-0 rounded-[var(--radius)] border bg-[var(--surface)] p-4 shadow-sm lg:block">
-              <FilterSidebar filters={filters} onChange={setFilters} />
-            </aside>
-
-            <div className="flex min-w-0 flex-1 flex-col">
-              {result === undefined ? (
-                <div className="flex justify-center py-16">
-                  <Spinner size="lg" />
-                </div>
-              ) : items.length === 0 ? (
-                <Alert status="default" className="rounded-[var(--radius)] border border-dashed">
-                  <Alert.Content>
-                    <Alert.Description>No listings match your filters.</Alert.Description>
-                  </Alert.Content>
-                </Alert>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {pageSlice.map((listing, i) => (
-                    <ProductCard
-                      key={listing.id}
-                      listing={listing}
-                      index={(currentPage - 1) * PAGE_SIZE + i}
-                      isFavorite={favorites.has(listing.id)}
-                      isOwner={!!me && listing.seller.id === me.id}
-                      onToggleFavorite={toggleFavorite}
-                      onDelete={deleteListing}
-                    />
-                  ))}
-                </div>
-              )}
-
-              <nav className="mt-6 flex justify-center sm:mt-8" aria-label="Pagination">
-                <Pagination>
-                  <Pagination.Content>
-                    <Pagination.Item>
-                      <Pagination.Previous isDisabled={currentPage === 1} onPress={() => setPage(currentPage - 1)}>
-                        <ChevronLeftIcon />
-                        Previous
-                      </Pagination.Previous>
-                    </Pagination.Item>
-                    {pageItems(currentPage, totalPages).map((p, i) =>
-                      p === "…" ? (
-                        <Pagination.Item key={`e${i}`}>
-                          <Pagination.Ellipsis />
-                        </Pagination.Item>
-                      ) : (
-                        <Pagination.Item key={p}>
-                          <Pagination.Link
-                            isActive={p === currentPage}
-                            onPress={() => setPage(p)}
-                          >
-                            {p}
-                          </Pagination.Link>
-                        </Pagination.Item>
-                      ),
-                    )}
-                    <Pagination.Item>
-                      <Pagination.Next
-                        isDisabled={currentPage === totalPages}
-                        onPress={() => setPage(currentPage + 1)}
-                      >
-                        Next
-                        <ChevronRightIcon />
-                      </Pagination.Next>
-                    </Pagination.Item>
-                  </Pagination.Content>
-                </Pagination>
-              </nav>
-            </div>
-          </div>
-        </div>
+        ) : view.kind === "home" ? (
+          renderHome()
+        ) : view.kind === "business" ? (
+          renderBusiness(view.businessId)
+        ) : (
+          renderProduct(view.productId, view.businessId)
+        )}
       </main>
 
       <footer className="border-t px-6 py-5 text-center text-xs text-[var(--muted)]">
         made by startup club
       </footer>
 
-      <FilterDrawer
-        state={drawerState}
-        onApply={() => drawerState.close()}
-        onClear={() => drawerState.close()}
-      />
+      <FilterDrawer state={filterState} />
       <CreateProductModal
         state={createState}
         sellerName={me?.name || ""}
