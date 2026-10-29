@@ -99,7 +99,7 @@ export default function LoginScreen({ onSignedIn }: LoginScreenProps) {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                isDisabled={busy}
+                disabled={busy}
               />
               <Button type="submit" fullWidth isPending={busy}>
                 {busy ? <Spinner size="sm" /> : "Continue"}
